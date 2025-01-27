@@ -21,26 +21,26 @@ const getTiendasbyId = async (id) => {
   };
 
   // Crear un nuevo tienda
-const createTienda = async (nombre_tienda, direccion, telefono,email,id_usuario) => {
+const createTienda = async (nombre_tienda, direccion, telefono,email,frecuencia_visitas ,id_usuario) => {
   try {
     const [result] = await pool.query(
-      'INSERT INTO tiendas (nombre_tienda, direccion, telefono,email,id_usuario) VALUES (?, ?, ?, ?, ?,?)', 
-      [nombre_tienda, direccion, telefono,email,id_usuario]
+      'INSERT INTO tiendas (nombre_tienda, direccion, telefono,email,frecuencia_visitas ,id_usuario) VALUES (?, ?, ?, ?, ?,?)', 
+      [nombre_tienda, direccion, telefono,email,id_usuario,frecuencia_visitas ]
     );
-    return { id_tienda: result.insertId, nombre_tienda, direccion, telefono,email,id_usuario };
+    return { id_tienda: result.insertId, nombre_tienda, direccion, telefono,email,id_usuario,frecuencia_visitas  };
   } catch (error) {
     throw error;
   }
 };
 
 // Actualizar una tienda
-const updateTienda = async (id,nombre_tienda, direccion, telefono,email,fecha_registro) => {
+const updateTienda = async (id,nombre_tienda, direccion, telefono,email,fecha_registro,frecuencia_visitas ) => {
     try {
       await pool.query(
-        'UPDATE productos SET nombre_tienda=?, direccion=?, telefono=?,email=?,fecha_registro=? WHERE id_tienda = ?', 
-        [nombre_tienda, direccion, telefono,email,fecha_registro, id]
+        'UPDATE productos SET nombre_tienda=?, direccion=?, telefono=?,email=?,fecha_registro=?, frecuencia_visitas =? WHERE id_tienda = ?', 
+        [nombre_tienda, direccion, telefono,email,fecha_registro,frecuencia_visitas , id]
       );
-      return { id,nombre_tienda, direccion, telefono,email,fecha_registro };
+      return { id,nombre_tienda, direccion, telefono,email,fecha_registro,frecuencia_visitas  };
     } catch (error) {
       throw error;
     }

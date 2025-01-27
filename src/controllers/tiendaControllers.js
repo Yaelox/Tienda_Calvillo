@@ -28,11 +28,11 @@ const getTiendaById = async (req, res) => {
 
 // Crear una nueva tienda
 const createTienda = async (req, res) => {
-  const { nombre_tienda, direccion, telefono, email,id_usuario} = req.body;
+  const { nombre_tienda, direccion, telefono, email,id_usuario,frecuencia_visitas } = req.body;
   try {
     const [result] = await pool.query(
-      'INSERT INTO tiendas (nombre_tienda, direccion, telefono, email,id_usuario) VALUES (?, ?, ?, ?,?)',
-      [nombre_tienda, direccion, telefono, email,id_usuario]
+      'INSERT INTO tiendas (nombre_tienda, direccion, telefono, email ,id_usuario,frecuencia_visitas) VALUES (?, ?, ?, ?,?,?)',
+      [nombre_tienda, direccion, telefono, email,id_usuario,frecuencia_visitas ]
     );
     res.status(201).json({
       id_tienda: result.insertId,
@@ -41,6 +41,7 @@ const createTienda = async (req, res) => {
       telefono,
       email,
       id_usuario,
+      frecuencia_visitas 
     });
   } catch (error) {
     console.error('Error al crear la tienda:', error);
@@ -51,11 +52,11 @@ const createTienda = async (req, res) => {
 // Actualizar una tienda
 const updateTienda = async (req, res) => {
   const { id } = req.params;
-  const { nombre_tienda, direccion, telefono, email, fecha_registro } = req.body;
+  const { nombre_tienda, direccion, telefono, email, fecha_registro,frecuencia_visitas } = req.body;
   try {
     const [result] = await pool.query(
-      'UPDATE tiendas SET nombre_tienda = ?, direccion = ?, telefono = ?, email = ?, fecha_registro = ? WHERE id_tienda = ?',
-      [nombre_tienda, direccion, telefono, email, fecha_registro, id]
+      'UPDATE tiendas SET nombre_tienda = ?, direccion = ?, telefono = ?, email = ?, fecha_registro = ?, frecuencia_visitas=? WHERE id_tienda = ?',
+      [nombre_tienda, direccion, telefono, email, fecha_registro,frecuencia_visitas, id]
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Tienda no encontrada' });
@@ -67,6 +68,7 @@ const updateTienda = async (req, res) => {
       telefono,
       email,
       fecha_registro,
+      frecuencia_visitas 
     });
   } catch (error) {
     console.error('Error al actualizar la tienda:', error);
