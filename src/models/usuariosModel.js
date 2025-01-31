@@ -21,13 +21,13 @@ const getUsersbyId = async (id) => {
 };
 
 // Actualizar una tienda
-const updateUsers= async (id,usuario, email, password,tipo_usuario,fecha_registro) => {
+const updateUsers = async (id, usuario, email, tipo_usuario) => {
   try {
     await pool.query(
-      'UPDATE users SET id,usuario=?, email=?, password=?,tipo_usuario=?,fecha_registro=? WHERE id_usuario = ?', 
-      [usuario, email, password,tipo_usuario,fecha_registro,id]
+      'UPDATE users SET usuario=?, email=?, tipo_usuario=? WHERE id_usuario = ?', 
+      [usuario, email,tipo_usuario, id] // Orden correcto
     );
-    return { id,usuario, email, password,tipo_usuario,fecha_registro };
+    return { id, usuario, email, tipo_usuario};
   } catch (error) {
     throw error;
   }

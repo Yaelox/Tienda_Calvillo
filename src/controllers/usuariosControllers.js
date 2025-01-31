@@ -29,11 +29,11 @@ const getUserById = async (req, res) => {
 // Actualizar un usuario
 const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { usuario, email, password, tipo_usuario, fecha_registro } = req.body;
+  const { usuario, email,tipo_usuario} = req.body;
   try {
     const [result] = await pool.query(
-      'UPDATE users SET usuario = ?, email = ?, password = ?, tipo_usuario = ?, fecha_registro = ? WHERE id_usuario = ?',
-      [usuario, email, password, tipo_usuario, fecha_registro, id]
+      'UPDATE users SET usuario = ?, email = ?, tipo_usuario = ? WHERE id_usuario = ?',
+      [usuario, email, tipo_usuario, id]
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
@@ -42,9 +42,7 @@ const updateUser = async (req, res) => {
       id_usuario: id,
       usuario,
       email,
-      password,
-      tipo_usuario,
-      fecha_registro,
+      tipo_usuario
     });
   } catch (error) {
     console.error('Error al actualizar el usuario:', error);
@@ -56,14 +54,24 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   const { id } = req.params;
   try {
+    // Verificar si el usuario tiene órdenes asociadas
+    const [orders] = await pool.query('SELECT * FROM ordenes WHERE id_usuario = ?', [id]);
+
+    if (orders.length > 0) {
+      return res.status(400).json({ message: 'No se puede eliminar el usuario porque tiene pedidos activos.' });
+    }
+
+    // Si no tiene órdenes, proceder con la eliminación
     const [result] = await pool.query('DELETE FROM users WHERE id_usuario = ?', [id]);
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
-    res.status(200).json({ message: 'Usuario eliminado' });
+
+    res.status(200).json({ message: 'Usuario eliminado correctamente' });
   } catch (error) {
     console.error('Error al eliminar el usuario:', error);
-    res.status(500).json({ message: 'Error al eliminar el usuario' });
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
 
