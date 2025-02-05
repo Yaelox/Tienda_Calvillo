@@ -1,46 +1,35 @@
 const { pool } = require('../../config/db');
 
 // Obtener todas las tiendas
-const getTiendas = async () => {
+const getTiendas = async (req, res) => {
+  const { id } = req.params;
   try {
-    const [tiendas] = await pool.query(
-      `SELECT 
-        id_tienda, 
-        nombre_tienda, 
-        direccion, 
-        telefono, 
-        email, 
-        id_usuario, 
-        frecuencia_visitas, 
-        fecha_registro 
-      FROM tiendas`
-    );
-    return tiendas;
+    const [rows] = await pool.query('SELECT * FROM tiendas', [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Tienda no encontrada' });
+    }
+
+    res.status(200).json(rows[0]);
   } catch (error) {
-    throw error;
+    console.error('Error al obtener la tienda:', error);
+    res.status(500).json({ message: 'Error en el servidor' });
   }
 };
 
-// Obtener una tienda por ID
-const getTiendasbyId = async (id) => {
+const   getTiendasbyId = async (req, res) => {
+  const { id } = req.params;
   try {
-    const [tienda] = await pool.query(
-      `SELECT 
-        id_tienda, 
-        nombre_tienda, 
-        direccion, 
-        telefono, 
-        email, 
-        id_usuario, 
-        frecuencia_visitas, 
-        fecha_registro 
-      FROM tiendas 
-      WHERE id_tienda = ?`,
-      [id]
-    );
-    return tienda.length ? tienda[0] : null;
+    const [rows] = await pool.query('SELECT * FROM tiendas WHERE id_tienda = ?', [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Tienda no encontrada' });
+    }
+
+    res.status(200).json(rows[0]);
   } catch (error) {
-    throw error;
+    console.error('Error al obtener la tienda:', error);
+    res.status(500).json({ message: 'Error en el servidor' });
   }
 };
 
