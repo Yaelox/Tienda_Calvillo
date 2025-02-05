@@ -1,24 +1,48 @@
 const { pool } = require('../../config/db');
 
-// Obtener todos los contactos
+// Obtener todas las tiendas
 const getTiendas = async () => {
-    try {
-      const [tiendas] = await pool.query("SELECT * FROM tiendas");
-      return tiendas;
-    } catch (error) {
-      throw error;
-    }
-  };
+  try {
+    const [tiendas] = await pool.query(
+      `SELECT 
+        id_tienda, 
+        nombre_tienda, 
+        direccion, 
+        telefono, 
+        email, 
+        id_usuario, 
+        frecuencia_visitas, 
+        fecha_registro 
+      FROM tiendas`
+    );
+    return tiendas;
+  } catch (error) {
+    throw error;
+  }
+};
 
-  // Obtener un producto por ID
+// Obtener una tienda por ID
 const getTiendasbyId = async (id) => {
-    try {
-      const [tiendas] = await pool.query('SELECT * FROM tiendas WHERE id_tienda = ?', [id]);
-      return tiendas.length ? tiendas[0] : null;
-    } catch (error) {
-      throw error;
-    }
-  };
+  try {
+    const [tienda] = await pool.query(
+      `SELECT 
+        id_tienda, 
+        nombre_tienda, 
+        direccion, 
+        telefono, 
+        email, 
+        id_usuario, 
+        frecuencia_visitas, 
+        fecha_registro 
+      FROM tiendas 
+      WHERE id_tienda = ?`,
+      [id]
+    );
+    return tienda.length ? tienda[0] : null;
+  } catch (error) {
+    throw error;
+  }
+};
 
   // Crear un nuevo tienda
 const createTienda = async (nombre_tienda, direccion, telefono,email,frecuencia_visitas ,id_usuario) => {
@@ -34,13 +58,13 @@ const createTienda = async (nombre_tienda, direccion, telefono,email,frecuencia_
 };
 
 // Actualizar una tienda
-const updateTienda = async (id,nombre_tienda, direccion, telefono,email,fecha_registro,frecuencia_visitas ) => {
+const updateTienda = async (id,nombre_tienda, direccion, telefono,email,frecuencia_visitas ) => {
     try {
       await pool.query(
-        'UPDATE productos SET nombre_tienda=?, direccion=?, telefono=?,email=?,fecha_registro=?, frecuencia_visitas =? WHERE id_tienda = ?', 
-        [nombre_tienda, direccion, telefono,email,fecha_registro,frecuencia_visitas , id]
+        'UPDATE productos SET nombre_tienda=?, direccion=?, telefono=?,email=?, frecuencia_visitas =? WHERE id_tienda = ?', 
+        [nombre_tienda, direccion, telefono,emailfrecuencia_visitas , id]
       );
-      return { id,nombre_tienda, direccion, telefono,email,fecha_registro,frecuencia_visitas  };
+      return { id,nombre_tienda, direccion, telefono,email,frecuencia_visitas  };
     } catch (error) {
       throw error;
     }

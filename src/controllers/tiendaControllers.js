@@ -1,30 +1,49 @@
 const { pool } = require('../../config/db');
 
 // Obtener todas las tiendas
-const getTiendas = async (req, res) => {
+const getTiendas = async () => {
   try {
-    const [tiendas] = await pool.query('SELECT * FROM tiendas');
-    res.status(200).json(tiendas);
+    const [tiendas] = await pool.query(
+      `SELECT 
+        id_tienda, 
+        nombre_tienda, 
+        direccion, 
+        telefono, 
+        email, 
+        id_usuario, 
+        frecuencia_visitas, 
+        fecha_registro 
+      FROM tiendas`
+    );
+    return tiendas;
   } catch (error) {
-    console.error('Error al obtener las tiendas:', error);
-    res.status(500).json({ message: 'Error al obtener las tiendas' });
+    throw error;
   }
 };
 
 // Obtener una tienda por ID
-const getTiendaById = async (req, res) => {
-  const { id } = req.params;
+const getTiendasbyId = async (id) => {
   try {
-    const [tienda] = await pool.query('SELECT * FROM tiendas WHERE id_tienda = ?', [id]);
-    if (tienda.length === 0) {
-      return res.status(404).json({ message: 'Tienda no encontrada' });
-    }
-    res.status(200).json(tienda[0]);
+    const [tienda] = await pool.query(
+      `SELECT 
+        id_tienda, 
+        nombre_tienda, 
+        direccion, 
+        telefono, 
+        email, 
+        id_usuario, 
+        frecuencia_visitas, 
+        fecha_registro 
+      FROM tiendas 
+      WHERE id_tienda = ?`,
+      [id]
+    );
+    return tienda.length ? tienda[0] : null;
   } catch (error) {
-    console.error('Error al obtener la tienda:', error);
-    res.status(500).json({ message: 'Error al obtener la tienda' });
+    throw error;
   }
 };
+
 
 // Crear una nueva tienda
 const createTienda = async (req, res) => {
@@ -52,11 +71,11 @@ const createTienda = async (req, res) => {
 // Actualizar una tienda
 const updateTienda = async (req, res) => {
   const { id } = req.params;
-  const { nombre_tienda, direccion, telefono, email, fecha_registro,frecuencia_visitas } = req.body;
+  const { nombre_tienda, direccion, telefono, email,frecuencia_visitas } = req.body;
   try {
     const [result] = await pool.query(
-      'UPDATE tiendas SET nombre_tienda = ?, direccion = ?, telefono = ?, email = ?, fecha_registro = ?, frecuencia_visitas=? WHERE id_tienda = ?',
-      [nombre_tienda, direccion, telefono, email, fecha_registro,frecuencia_visitas, id]
+      'UPDATE tiendas SET nombre_tienda = ?, direccion = ?, telefono = ?, email = ?, frecuencia_visitas=? WHERE id_tienda = ?',
+      [nombre_tienda, direccion, telefono, email,frecuencia_visitas, id]
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Tienda no encontrada' });
@@ -67,7 +86,6 @@ const updateTienda = async (req, res) => {
       direccion,
       telefono,
       email,
-      fecha_registro,
       frecuencia_visitas 
     });
   } catch (error) {
@@ -93,7 +111,7 @@ const deleteTienda = async (req, res) => {
 
 module.exports = {
   getTiendas,
-  getTiendaById,
+  getTiendasbyId,
   createTienda,
   updateTienda,
   deleteTienda,
