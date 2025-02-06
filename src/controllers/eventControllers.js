@@ -1,101 +1,115 @@
-const db = require("../models/eventModel");
-const Event = db.events;
-
-// Crear un nuevo evento
-exports.create = (req, res) => {
-  if (!req.body.name || !req.body.date || !req.body.location) {
-    return res.status(400).send({
-      message: "Faltan datos para crear el evento."
-    });
-  }
-
-  const event = {
-    name: req.body.name,
-    date: req.body.date,
-    location: req.body.location
-  };
-
-  Event.create(event)
-    .then(data => {
-      res.status(201).send(data);
-    })
-    .catch(err => {
-      res.status(500).send({
-        message: err.message || "Hubo un error al crear el evento."
-      });
-    });
-};
+const { pool } = require("../../config/db");
 
 // Obtener todos los eventos
-exports.findAll = (req, res) => {
-  Event.findAll()
-    .then(data => {
-      res.status(200).send(data);
-    })
-    .catch(err => {
-      res.status(500).send({
-        message: err.message || "Hubo un error al obtener los eventos."
-      });
-    });
+const getEventos = async (req, res) => {
+  try {
+    const [eventos] = await pool.query('SELECT * FROM events');
+    res.status(200).json(eventos);
+  } catch (error) {
+    console.error('Error al obtener los eventos:', error);
+    res.status(500).json({ message: 'Error al obtener los eventos' });
+  }
 };
 
-// Obtener un evento por ID
-exports.findOne = (req, res) => {
-  const id = req.params.id;
+const  getEventoById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await pool.query('SELECT * FROM events WHERE id_evento = ?', [id]);
 
-  Event.findByPk(id)
-    .then(data => {
-      if (!data) {
-        res.status(404).send({ message: `No se encontró el evento con id ${id}` });
-      } else {
-        res.status(200).send(data);
-      }
-    })
-    .catch(err => {
-      res.status(500).send({
-        message: err.message || `Error al obtener el evento con id ${id}`
-      });
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Evento no encontrado' });
+    }
+
+    res.status(200).json(rows[0]);
+  } catch (error) {
+    console.error('Error al obtener el evento:', error);
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
+};
+
+
+const createEvento = async (req, res) => {
+  const { nombre, fecha, telefono, email, ubicacion, descripcion } = req.body;
+  try {
+    // Obtener el id_usuario a partir del email
+    const [usuarios] = await pool.query("SELECT id_usuario FROM users WHERE email = ?", [email]);
+    
+    if (usuarios.length === 0) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+    
+    const id_usuario = usuarios[0].id_usuario;
+
+    // Crear el evento en la base de datos
+    const [result] = await pool.query(
+      "INSERT INTO events (id_usuario, nombre, fecha, telefono, email, ubicacion, descripcion) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [id_usuario, nombre, fecha, telefono, email, ubicacion, descripcion]
+    );
+
+    return res.status(201).json({
+      id_evento: result.insertId,
+      id_usuario,
+      nombre,
+      fecha,
+      telefono,
+      email,
+      ubicacion,
+      descripcion,
     });
+  } catch (error) {
+    console.error('Error al crear evento:', error);
+    return res.status(500).json({ message: "Error al crear el evento" });
+  }
 };
 
 // Actualizar un evento
-exports.update = (req, res) => {
-  const id = req.params.id;
-
-  Event.update(req.body, {
-    where: { id: id }
-  })
-    .then(num => {
-      if (num == 1) {
-        res.send({ message: "Evento actualizado exitosamente." });
-      } else {
-        res.send({ message: `No se pudo actualizar el evento con id ${id}` });
-      }
-    })
-    .catch(err => {
-      res.status(500).send({
-        message: err.message || `Error al actualizar el evento con id ${id}`
-      });
+const updateEvento = async (req, res) => {
+  const { id } = req.params;
+  const { id_usuario, nombre, fecha, telefono, email, ubicacion, descripcion } = req.body;
+  try {
+    const [result] = await pool.query(
+      'UPDATE events SET  id_usuario=?,nombre = ?, fecha = ?, telefono = ?, email = ?, ubicacion = ?, descripcion = ? WHERE id_evento = ?',
+      [id_usuario,nombre, fecha, telefono, email, ubicacion, descripcion, id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Evento no encontrado' });
+    }
+    res.status(200).json({
+      id_evento: id,
+      id_usuario,
+      nombre,
+      fecha,
+      telefono,
+      email,
+      ubicacion,
+      descripcion,
     });
+  } catch (error) {
+    console.error('Error al actualizar el evento:', error);
+    res.status(500).json({ message: 'Error al actualizar el evento' });
+  }
 };
 
-// Eliminar un evento
-exports.delete = (req, res) => {
-  const id = req.params.id;
 
-  Event.destroy({
-    where: { id: id }
-  })
-    .then(num => {
-      if (num == 1) {
-        res.send({ message: "Evento eliminado exitosamente." });
-      } else {
-        res.send({ message: `No se pudo eliminar el evento con id ${id}` });
-      }
-    })
-    .catch(err => {
-      res.status(500).send({
-        message: err.message || `Error al eliminar el evento con id ${id}`
-      });
-    });
+// Eliminar un evento
+const deleteEvento = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [result] = await pool.query('DELETE FROM events WHERE id_evento = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Evento no encontrado' });
+    }
+    res.status(200).json({ message: 'Evento Eliminado' });
+  } catch (error) {
+    console.error('Error al eliminar el evento:', error);
+    res.status(500).json({ message: 'Error al eliminar el evento' });
+  }
+};
+
+module.exports = {
+  getEventos,
+  getEventoById,
+  createEvento,
+  updateEvento,
+  deleteEvento,
 };

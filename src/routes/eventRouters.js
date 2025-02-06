@@ -1,23 +1,12 @@
-module.exports = app => {
-    const events = require("../controllers/event.controller.js");
-  
-    let router = require("express").Router();
-  
-    // Crear un nuevo evento
-    router.post("/event", events.create);
-  
-    // Obtener todos los eventos
-    router.get("/", events.findAll);
-  
-    // Obtener un evento por ID
-    router.get("/:id", events.findOne);
-  
-    // Actualizar un evento
-    router.put("/:id", events.update);
-  
-    // Eliminar un evento
-    router.delete("/:id", events.delete);
-  
-    app.use("/events", router);
-  };
-  
+const express = require('express');
+const eventoController = require('../controllers/eventControllers');
+const router = express.Router();
+
+
+router.post('/evento', eventoController.createEvento);         // Crear producto
+router.get('/evento',eventoController.getEventos);           // Obtener todos los productos
+router.get('/evento/:id', eventoController.getEventoById);     // Obtener producto por ID
+router.put('/evento/:id', eventoController.updateEvento);      // Actualizar producto por ID
+router.delete('/evento/:id', eventoController.deleteEvento);   // Eliminar producto por ID
+
+module.exports = router;

@@ -1,19 +1,14 @@
 const { pool } = require('../../config/db');
 
 // Obtener todas las tiendas
+// Obtener todos los usuarios
 const getTiendas = async (req, res) => {
-  const { id } = req.params;
   try {
-    const [rows] = await pool.query('SELECT * FROM tiendas', [id]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ message: 'Tienda no encontrada' });
-    }
-
-    res.status(200).json(rows[0]);
+    const [tiendas] = await pool.query('SELECT * FROM tiendas');
+    res.status(200).json(tiendas);
   } catch (error) {
-    console.error('Error al obtener la tienda:', error);
-    res.status(500).json({ message: 'Error en el servidor' });
+    console.error('Error al obtener las tiendas:', error);
+    res.status(500).json({ message: 'Error al obtener las tiendas' });
   }
 };
 
