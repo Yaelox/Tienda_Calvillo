@@ -25,26 +25,26 @@ const getContactoById = async (id) => {
 };
 
 // Crear un nuevo contacto
-const createContacto = async (nombre, email, descripcion, id_usuario) => {
+const createContacto = async (nombre, email,telefono, descripcion, id_usuario) => {
   try {
     const [result] = await pool.query(
-      "INSERT INTO contacto (nombre, email, descripcion, id_usuario) VALUES (?, ?, ?, ?)",
-      [nombre, email, descripcion, id_usuario]
+      "INSERT INTO contacto (nombre, email,telefono, descripcion, id_usuario) VALUES (?, ?, ?,?, ?)",
+      [nombre, email,telefono, descripcion, id_usuario]
     );
-    return { contacto_id: result.insertId, nombre, email, descripcion, id_usuario };
+    return { contacto_id: result.insertId, nombre, email,telefono, descripcion, id_usuario };
   } catch (error) {
     throw error;
   }
 };
 
 // Actualizar un contacto
-const updateContacto = async (contacto_id, nombre, email, descripcion) => {
+const updateContacto = async (contacto_id, nombre, email,telefono, descripcion) => {
   try {
     await pool.query(
-      "UPDATE contacto SET nombre = ?, email = ?, descripcion = ? WHERE contacto_id = ?",
+      "UPDATE contacto SET nombre = ?, email = ?,telefono=?, descripcion = ? WHERE contacto_id = ?",
       [nombre, email, descripcion, contacto_id]
     );
-    return { contacto_id, nombre, email, descripcion };
+    return { contacto_id, nombre, email,telefono, descripcion };
   } catch (error) {
     throw error;
   }

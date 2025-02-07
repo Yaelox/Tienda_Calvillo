@@ -5,7 +5,7 @@ const Contacto = require('../models/contactoModel');
 // Crear un nuevo contacto
 exports.createContacto = async (req, res) => {
   try {
-    const { nombre, email, descripcion } = req.body;
+    const { nombre, email,telefono, descripcion } = req.body;
 
     // Buscar el id_usuario basado en el email
     const [usuario] = await pool.query('SELECT id_usuario FROM users WHERE email = ?', [email]);
@@ -17,7 +17,7 @@ exports.createContacto = async (req, res) => {
     const id_usuario = usuario[0].id_usuario;
 
     // Crear el contacto con el id_usuario obtenido
-    const nuevoContacto = await Contacto.createContacto(nombre, email, descripcion, id_usuario);
+    const nuevoContacto = await Contacto.createContacto(nombre, email,telefono,  descripcion, id_usuario);
 
     res.status(201).json(nuevoContacto);
   } catch (error) {
@@ -56,14 +56,14 @@ exports.getContactoById = async (req, res) => {
 exports.updateContacto = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, email, descripcion } = req.body;
+    const { nombre, email, telefono,descripcion} = req.body;
     const contacto = await Contacto.getContactoById(id);
 
     if (!contacto) {
       return res.status(404).json({ error: 'Contacto no encontrado' });
     }
 
-    const updatedContacto = await Contacto.updateContacto(id, nombre, email, descripcion);
+    const updatedContacto = await Contacto.updateContacto(id, nombre, email,telefono, descripcion);
     res.status(200).json(updatedContacto);
   } catch (error) {
     console.error('Error al actualizar el contacto:', error);
