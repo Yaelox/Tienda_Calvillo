@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/userModel');
 
 const registerUser = async (req, res) => {
-  const { usuario, email, password, tipo_usuario } = req.body;
+  const { nombre,usuario, email, password,telefono, tipo_usuario } = req.body;
 
   try {
     const existingUser = await User.findByEmail(email);
@@ -14,7 +14,7 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    await User.createUser(usuario, email, passwordHash,tipo_usuario);
+    await User.createUser(nombre,usuario, email, passwordHash,telefono,tipo_usuario);
 
     res.status(201).json({ message: 'Usuario registrado correctamente' });
   } catch (error) {

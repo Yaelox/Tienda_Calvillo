@@ -29,10 +29,10 @@ const getUserById = async (req, res) => {
 // Actualizar un usuario
 const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { usuario, email,tipo_usuario} = req.body;
+  const { nombre,usuario, email,telefono,tipo_usuario} = req.body;
   try {
     const [result] = await pool.query(
-      'UPDATE users SET usuario = ?, email = ?, tipo_usuario = ? WHERE id_usuario = ?',
+      'UPDATE users SET nombre=?,usuario = ?, email = ?,telefono=?, tipo_usuario = ? WHERE id_usuario = ?',
       [usuario, email, tipo_usuario, id]
     );
     if (result.affectedRows === 0) {
@@ -40,8 +40,10 @@ const updateUser = async (req, res) => {
     }
     res.status(200).json({
       id_usuario: id,
+      nombre,
       usuario,
       email,
+      telefono,
       tipo_usuario
     });
   } catch (error) {
