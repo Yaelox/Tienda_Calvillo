@@ -37,12 +37,36 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Credenciales incorrectas' });
     }
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token });
+    // Verifica que 'user' tiene el campo 'id' antes de generar el token
+    console.log('User recibido:', user);
+
+    const token = jwt.sign({ 
+      id: user.id, // Asegúrate de que 'id' sea el campo correcto
+      tipo_usuario: user.tipo_usuario
+    }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    // Verifica que 'user.id' esté presente
+    if (!user.id_usuario) {
+      console.error('Error: id_usuario está indefinido en el objeto usuario.');
+    }
+
+    res.json({
+      token,
+      user: {
+        id_usuario: user.id_usuario, // Asegúrate de que 'id' se mapea correctamente a 'id_usuario'
+        nombre: user.nombre,
+        usuario: user.usuario,
+        email: user.email,
+        telefono: user.telefono,
+        tipo_usuario: user.tipo_usuario, // Pasar el tipo_usuario también
+      },
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error en el servidor' });
   }
 };
+
+
 
 module.exports = { registerUser, loginUser };

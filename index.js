@@ -25,6 +25,7 @@ const startServer = async () => {
         app.use('/api',require('./src/routes/tiendaRouters'))
         app.use('/api', require('./src/routes/eventRouters'))
         app.use('/api',require('./src/routes/postRouters'))
+        app.use('/api',require('./src/routes/comprasRouters'))
 
         // Server port
         const PORT = process.env.PORT || 3000;

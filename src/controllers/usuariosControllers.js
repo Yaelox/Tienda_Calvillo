@@ -33,7 +33,7 @@ const updateUser = async (req, res) => {
   try {
     const [result] = await pool.query(
       'UPDATE users SET nombre=?,usuario = ?, email = ?,telefono=?, tipo_usuario = ? WHERE id_usuario = ?',
-      [usuario, email, tipo_usuario, id]
+      [usuario,nombre, email,telefono, tipo_usuario, id]
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
@@ -57,7 +57,7 @@ const deleteUser = async (req, res) => {
   const { id } = req.params;
   try {
     // Verificar si el usuario tiene órdenes asociadas
-    const [orders] = await pool.query('SELECT * FROM ordenes WHERE id_usuario = ?', [id]);
+    const [orders] = await pool.query('SELECT * FROM compras WHERE usuario_id = ?', [id]);
 
     if (orders.length > 0) {
       return res.status(400).json({ message: 'No se puede eliminar el usuario porque tiene pedidos activos.' });
