@@ -33,7 +33,7 @@ const updateUser = async (req, res) => {
   try {
     const [result] = await pool.query(
       'UPDATE users SET nombre=?,usuario = ?, email = ?,telefono=?, tipo_usuario = ? WHERE id_usuario = ?',
-      [usuario,nombre, email,telefono, tipo_usuario, id]
+      [nombre,usuario,email,telefono, tipo_usuario, id]
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
