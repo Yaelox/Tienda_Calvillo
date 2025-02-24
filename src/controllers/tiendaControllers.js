@@ -55,28 +55,51 @@ const createTienda = async (req, res) => {
 // Actualizar una tienda
 const updateTienda = async (req, res) => {
   const { id } = req.params;
-  const { nombre_tienda, direccion, telefono, email,frecuencia_visitas } = req.body;
+  const { nombre_tienda, direccion, telefono, email, frecuencia_visitas, id_usuario } = req.body;
+
   try {
-    const [result] = await pool.query(
-      'UPDATE tiendas SET nombre_tienda = ?, direccion = ?, telefono = ?, email = ?, frecuencia_visitas=? WHERE id_tienda = ?',
-      [nombre_tienda, direccion, telefono, email,frecuencia_visitas, id]
-    );
-    if (result.affectedRows === 0) {
+    // Verificar si la tienda existe antes de actualizar
+    const [existing] = await pool.query('SELECT * FROM tiendas WHERE id_tienda = ?', [id]);
+
+    if (existing.length === 0) {
       return res.status(404).json({ message: 'Tienda no encontrada' });
     }
+
+    // Ejecutar la actualización
+    const [result] = await pool.query(
+      'UPDATE tiendas SET nombre_tienda = ?, direccion = ?, telefono = ?, email = ?, frecuencia_visitas = ?, id_usuario = ? WHERE id_tienda = ?',
+      [nombre_tienda, direccion, telefono, email, frecuencia_visitas, id_usuario, id]
+    );
+
+    // Confirmar si realmente se actualizó algún registro
+    if (result.affectedRows === 0) {
+      return res.status(400).json({ message: 'No se realizaron cambios en la tienda' });
+    }
+
     res.status(200).json({
-      id_tienda: id,
-      nombre_tienda,
-      direccion,
-      telefono,
-      email,
-      frecuencia_visitas 
+      message: 'Tienda actualizada con éxito',
+      tienda: {
+        id_tienda: id,
+        nombre_tienda,
+        direccion,
+        telefono,
+        email,
+        frecuencia_visitas,
+        id_usuario
+      }
     });
+
   } catch (error) {
     console.error('Error al actualizar la tienda:', error);
-    res.status(500).json({ message: 'Error al actualizar la tienda' });
+    
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'El correo o teléfono ya están en uso' });
+    }
+
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+
 
 // Eliminar una tienda
 const deleteTienda = async (req, res) => {
