@@ -34,16 +34,37 @@ const createProducto = async (nombre, descripcion, precio, stock, categoria_id, 
   }
 };
 
-// Actualizar un producto
 const updateProducto = async (id, nombre, descripcion, precio, stock, categoria_id, imagen) => {
   try {
-    await pool.query(
-      'UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ?, categoria_id = ?, imagen = ? WHERE id_producto = ?', 
+    // Verifica que al menos algunos de los campos estén presentes
+    if (!nombre || !precio || !stock || !categoria_id) {
+      throw new Error('Faltan datos obligatorios para actualizar el producto');
+    }
+
+    // Si no se recibe una nueva imagen, mantén la imagen anterior (si es que existe)
+    if (!imagen) {
+      const producto = await pool.query('SELECT imagen FROM productos WHERE id_producto = ?', [id]);
+      imagen = producto[0]?.imagen; // Si no se encuentra la imagen, mantén la anterior
+    }
+
+    // Ejecuta la actualización del producto en la base de datos
+    const result = await pool.query(
+      'UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ?, categoria_id = ?, imagen = ? WHERE id_producto = ?',
       [nombre, descripcion, precio, stock, categoria_id, imagen, id]
     );
-    return { id, nombre, descripcion, precio, stock, categoria_id, imagen };
+
+    if (result.affectedRows === 0) {
+      throw new Error('No se actualizó ningún producto. Verifique que el ID sea correcto.');
+    }
+
+    // Recupera el producto actualizado desde la base de datos para devolverlo
+    const updatedProduct = await pool.query('SELECT * FROM productos WHERE id_producto = ?', [id]);
+    
+    // Retorna el producto actualizado
+    return updatedProduct[0];
   } catch (error) {
-    throw error;
+    console.error('Error al actualizar el producto:', error);
+    throw new Error('Error al actualizar el producto: ' + error.message);
   }
 };
 
