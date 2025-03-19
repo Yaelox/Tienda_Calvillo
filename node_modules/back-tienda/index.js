@@ -8,7 +8,7 @@ const app = express();
 
 // Middlewares
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // Function to initialize the server
 const startServer = async () => {
@@ -23,7 +23,7 @@ const startServer = async () => {
         app.use('/api', require ('./src/routes/contactoRouters'))
         app.use('/api', require('./src/routes/usuariosRouters'))
         app.use('/api',require('./src/routes/tiendaRouters'))
-        app.use('/api', require('./src/routes/eventRouters'))
+        app.use('/api',require('./src/routes/eventRouters'))
         app.use('/api',require('./src/routes/postRouters'))
         app.use('/api',require('./src/routes/comprasRouters'))
         app.use('/api',require('./src/routes/compra-detallesRouters'))

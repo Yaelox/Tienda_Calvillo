@@ -2,10 +2,10 @@ const { pool } = require("../../config/db"); // Asegúrate de usar la ruta corre
 
 
 const registrarVenta = async (req, res) => {
-    const { repartidor_id, tienda_id, total, productos } = req.body; // Se espera un array de productos
+    const { repartidor_id, tienda_id, total, productos,foto_venta } = req.body; // Se espera un array de productos
 
     // Verificar que todos los campos necesarios están presentes
-    if (!repartidor_id || !tienda_id || !total || !productos || productos.length === 0) {
+    if (!repartidor_id || !tienda_id || !total || !foto_venta || !productos || productos.length === 0) {
         return res.status(400).json({ error: "Todos los campos son obligatorios, incluyendo los productos" });
     }
 
@@ -16,13 +16,12 @@ const registrarVenta = async (req, res) => {
         await connection.beginTransaction();
 
         // Registrar la venta en la tabla ventas_repartidores
-        const queryVenta = "INSERT INTO ventas_repartidores (repartidor_id, tienda_id, total) VALUES (?, ?, ?)";
-        const [ventaResult] = await connection.query(queryVenta, [repartidor_id, tienda_id, total]);
+        const queryVenta = "INSERT INTO ventas_repartidores (repartidor_id, tienda_id, total,foto_venta) VALUES (?, ?, ?, ?)";
+        const [ventaResult] = await connection.query(queryVenta, [repartidor_id, tienda_id, total,foto_venta]);
 
         // Obtener el id de la venta registrada
         const ventaId = ventaResult.insertId;
 
-        // Insertar los detalles de la venta en ventas_detalles
         // Insertar los detalles de la venta en ventas_detalles
         for (const producto of productos) {
             const { producto_id, cantidad, precio } = producto;
@@ -60,16 +59,59 @@ const registrarVenta = async (req, res) => {
 // Obtener todas las ventas de un repartidor
 const obtenerVentasPorRepartidor = async (req, res) => {
     try {
-        const { repartidor_id } = req.params;
+        const { id } = req.params;  // Aquí cambiamos "repartidor_id" por "id"
 
-        if (!repartidor_id) {
+        if (!id) {
             return res.status(400).json({ error: "El ID del repartidor es obligatorio" });
         }
 
-        const query = "SELECT * FROM ventas_repartidores WHERE repartidor_id = ?";
-        const [ventas] = await pool.query(query, [repartidor_id]);
+        const query = `
+            SELECT vr.*, vd.id_venta_detalle, vd.producto_id, vd.cantidad, vd.precio, vd.subtotal
+            FROM ventas_repartidores vr
+            LEFT JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
+            WHERE vr.repartidor_id = ?
+        `;
+        
+        const [ventas] = await pool.query(query, [id]);
 
-        res.json({ success: true, ventas });
+        if (ventas.length === 0) {
+            return res.status(404).json({ error: "No se encontraron ventas para este repartidor" });
+        }
+
+        // Ahora vamos a mapear las ventas con sus detalles
+        const ventasConDetalles = [];
+
+        ventas.forEach((venta) => {
+            // Buscamos si ya hemos añadido esta venta a la lista
+            let ventaExistente = ventasConDetalles.find(v => v.id_venta === venta.id_venta);
+
+            if (!ventaExistente) {
+                // Si la venta no existe en el array, la creamos
+                ventaExistente = {
+                    id_venta: venta.id_venta,
+                    repartidor_id: venta.repartidor_id,
+                    tienda_id: venta.tienda_id,
+                    total: venta.total,
+                    fecha_venta: venta.fecha_venta,
+                    foto_venta: venta.foto_venta,
+                    detalles: [] // Inicializamos la lista de detalles
+                };
+                ventasConDetalles.push(ventaExistente);
+            }
+
+            // Agregamos el detalle de la venta
+            if (venta.id_venta_detalle) {
+                ventaExistente.detalles.push({
+                    id_venta_detalle: venta.id_venta_detalle,
+                    producto_id: venta.producto_id,
+                    cantidad: venta.cantidad,
+                    precio: venta.precio,
+                    subtotal: venta.subtotal
+                });
+            }
+        });
+
+        res.json({ success: true, ventas: ventasConDetalles });
     } catch (error) {
         console.error("Error al obtener ventas:", error);
         res.status(500).json({ error: "Error interno del servidor" });
