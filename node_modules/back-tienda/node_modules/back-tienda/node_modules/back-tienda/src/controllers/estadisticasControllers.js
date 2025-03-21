@@ -5,11 +5,13 @@ const getVentasPorZona = async (req, res) => {
     try {
         const [result] = await pool.query(`
             SELECT 
-                SUBSTRING_INDEX(SUBSTRING_INDEX(t.direccion, ',', -2), ',', 1) AS ciudad,
+                t.ciudad,
+                t.calle,
+                t.colonia,
                 SUM(vr.total) AS total_ventas 
             FROM ventas_repartidores vr
             JOIN tiendas t ON t.id_tienda = vr.tienda_id
-            GROUP BY ciudad
+            GROUP BY t.ciudad, t.calle, t.colonia
             ORDER BY total_ventas DESC
         `);
 
@@ -111,10 +113,10 @@ const getVentasPorSemana = async (req, res) => {
 const getVentasPorAnio = async (req, res) => {
     try {
         const [result] = await pool.query(`
-            SELECT EXTRACT(YEAR FROM fecha_venta) AS año, SUM(total) AS total_ventas
+            SELECT EXTRACT(YEAR FROM fecha_venta) AS ano, SUM(total) AS total_ventas
             FROM ventas_repartidores
-            GROUP BY año
-            ORDER BY año
+            GROUP BY ano
+            ORDER BY ano
         `);
 
         res.json(result);
