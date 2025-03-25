@@ -43,7 +43,7 @@ const loginUser = async (req, res) => {
     const token = jwt.sign({ 
       id: user.id, // Asegúrate de que 'id' sea el campo correcto
       tipo_usuario: user.tipo_usuario
-    }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
     // Verifica que 'user.id' esté presente
     if (!user.id_usuario) {

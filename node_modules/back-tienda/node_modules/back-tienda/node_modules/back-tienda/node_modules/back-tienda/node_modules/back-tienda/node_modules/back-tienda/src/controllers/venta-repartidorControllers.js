@@ -1,23 +1,22 @@
 const { pool } = require("../../config/db"); // Asegúrate de usar la ruta correcta
 
-
 const registrarVenta = async (req, res) => {
-    const { repartidor_id, tienda_id, total, productos,foto_venta } = req.body; // Se espera un array de productos
+    const { repartidor_id, tienda_id, total, productos, foto_venta } = req.body; // Se espera un array de productos
 
     // Verificar que todos los campos necesarios están presentes
     if (!repartidor_id || !tienda_id || !total || !foto_venta || !productos || productos.length === 0) {
         return res.status(400).json({ error: "Todos los campos son obligatorios, incluyendo los productos" });
     }
 
-    // Transacción para insertar la venta y los detalles
+    // Transacción para insertar la venta, los detalles y actualizar el stock
     const connection = await pool.getConnection();
     try {
         // Iniciar una transacción
         await connection.beginTransaction();
 
         // Registrar la venta en la tabla ventas_repartidores
-        const queryVenta = "INSERT INTO ventas_repartidores (repartidor_id, tienda_id, total,foto_venta) VALUES (?, ?, ?, ?)";
-        const [ventaResult] = await connection.query(queryVenta, [repartidor_id, tienda_id, total,foto_venta]);
+        const queryVenta = "INSERT INTO ventas_repartidores (repartidor_id, tienda_id, total, foto_venta) VALUES (?, ?, ?, ?)";
+        const [ventaResult] = await connection.query(queryVenta, [repartidor_id, tienda_id, total, foto_venta]);
 
         // Obtener el id de la venta registrada
         const ventaId = ventaResult.insertId;
@@ -33,12 +32,26 @@ const registrarVenta = async (req, res) => {
                 throw new Error("Los detalles del producto son incompletos");
             }
 
+            // Verificar si hay suficiente stock disponible
+            const queryStock = "SELECT stock FROM productos WHERE  id_producto  = ?";
+            const [stockResult] = await connection.query(queryStock, [producto_id]);
+
+            if (stockResult.length === 0 || stockResult[0].stock < cantidad) {
+                throw new Error(`No hay suficiente stock para el producto con ID ${producto_id}`);
+            }
+
+            // Restar el stock
+            const nuevoStock = stockResult[0].stock - cantidad;
+            const queryActualizarStock = "UPDATE productos SET stock = ? WHERE  id_producto  = ?";
+            await connection.query(queryActualizarStock, [nuevoStock, producto_id]);
+
+            // Calcular el subtotal
             const subtotal = cantidad * precio;
 
+            // Insertar el detalle de la venta en ventas_detalles
             const queryDetalle = "INSERT INTO ventas_detalles (venta_id, producto_id, cantidad, precio, subtotal) VALUES (?, ?, ?, ?, ?)";
             await connection.query(queryDetalle, [ventaId, producto_id, cantidad, precio, subtotal]);
         }
-
 
         // Confirmar la transacción
         await connection.commit();
@@ -49,12 +62,13 @@ const registrarVenta = async (req, res) => {
         // Si hay un error, revertir la transacción
         await connection.rollback();
         console.error("Error al registrar la venta:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
+        res.status(500).json({ error: error.message || "Error interno del servidor" });
     } finally {
         // Liberar la conexión
         connection.release();
     }
 };
+
 
 // Obtener todas las ventas de un repartidor
 const obtenerVentasPorRepartidor = async (req, res) => {

@@ -33,76 +33,56 @@ async function registrarCompra(req, res) {
   let connection;
 
   try {
-    // Validar que no haya datos faltantes
     if (!usuario_id || !total || !metodo_pago || !nombre_completo || !direccion || !ciudad || !codigo_postal || latitud === undefined || longitud === undefined || !productos || productos.length === 0) {
       console.log('Datos faltantes en la solicitud:', req.body);
       return res.status(400).json({ error: "Faltan datos en la solicitud" });
     }
 
-    console.log('Información de compra:', nombre_completo, direccion, ciudad, codigo_postal, latitud, longitud);
-
     connection = await db.pool.getConnection();
-    console.log('Conexión obtenida de la pool');
-    
-    await connection.beginTransaction(); // Iniciar transacción
-    console.log('Transacción iniciada');
+    await connection.beginTransaction();
 
-    // Insertar en la tabla "compras"
+    // Insertar la compra
     const [compraResult] = await connection.execute(
       `INSERT INTO compras (usuario_id, total, metodo_pago, nombre_completo, direccion, ciudad, codigo_postal, latitud, longitud, estado) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')`, 
       [usuario_id, total, metodo_pago, nombre_completo, direccion, ciudad, codigo_postal, latitud, longitud]
     );
 
-    console.log('Compra registrada en la tabla "compras"', compraResult);
-    const compraId = compraResult.insertId; // Obtener el ID de la compra recién creada
-    console.log('ID de la compra recién creada:', compraId);
+    const compraId = compraResult.insertId;
 
-    // Validar los productos y preparar los datos para la inserción
+    // Insertar detalles de la compra
     const productosData = productos.map(p => {
-      const id_producto = p.id_producto || null;
-      const cantidad = p.cantidad || 1;
-      const precio = p.precio || 0;
-
-      // Si algún producto tiene datos incorrectos, lanzar un error
-      if (!id_producto || cantidad <= 0 || precio <= 0) {
-        throw new Error('Datos de producto inválidos');
-      }
-
-      return [
-        compraId,
-        id_producto,
-        cantidad,
-        precio,
-        cantidad * precio
-      ];
+      const id_producto = p.id_producto;
+      const cantidad = p.cantidad;
+      const precio = p.precio;
+      return [compraId, id_producto, cantidad, precio, cantidad * precio];
     });
 
-    console.log('Productos a insertar:', productosData);
+    await connection.query(
+      `INSERT INTO compra_detalles (compra_id, producto_id, cantidad, precio_unitario, subtotal) VALUES ?`,
+      [productosData]
+    );
 
-    // Insertar los productos en la tabla "compra_detalles"
-    const productosQuery = `INSERT INTO compra_detalles (compra_id, producto_id, cantidad, precio_unitario, subtotal) VALUES ?`;
-    await connection.query(productosQuery, [productosData]);
-    console.log('Productos insertados correctamente en "compra_detalles"');
+    // **Restar productos del stock**
+    for (const p of productos) {
+      await connection.execute(
+        `UPDATE productos SET stock = stock - ? WHERE id_producto = ? AND stock >= ?`,
+        [p.cantidad, p.id_producto, p.cantidad]
+      );
+    }
 
-    await connection.commit(); // Confirmar la transacción
-    console.log('Transacción confirmada');
+    await connection.commit();
     res.status(201).json({ message: "Compra registrada con éxito", compraId });
 
   } catch (error) {
-    if (connection) {
-      await connection.rollback();
-      console.log('Transacción revertida debido a un error');
-    }
+    if (connection) await connection.rollback();
     console.error('Error al registrar la compra:', error.message);
     res.status(500).json({ error: error.message || "Error interno del servidor" });
   } finally {
-    if (connection) {
-      connection.release();
-      console.log('Conexión liberada');
-    }
+    if (connection) connection.release();
   }
 }
+
 
 
 // Actualizar estado de la compra

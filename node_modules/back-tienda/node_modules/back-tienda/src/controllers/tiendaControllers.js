@@ -1,6 +1,7 @@
 const { pool } = require('../../config/db');
 
 // Obtener todas las tiendas
+// Obtener todos los usuarios
 const getTiendas = async (req, res) => {
   try {
     const [tiendas] = await pool.query('SELECT * FROM tiendas');
@@ -11,8 +12,7 @@ const getTiendas = async (req, res) => {
   }
 };
 
-// Obtener tienda por ID
-const getTiendasbyId = async (req, res) => {
+const   getTiendasbyId = async (req, res) => {
   const { id } = req.params;
   try {
     const [rows] = await pool.query('SELECT * FROM tiendas WHERE id_tienda = ?', [id]);
@@ -28,26 +28,23 @@ const getTiendasbyId = async (req, res) => {
   }
 };
 
+
 // Crear una nueva tienda
 const createTienda = async (req, res) => {
-  const { nombre_tienda, calle, numero, colonia, ciudad, codigo_postal, telefono, email, id_usuario, frecuencia_visitas } = req.body;
+  const { nombre_tienda, direccion, telefono, email,id_usuario,frecuencia_visitas } = req.body;
   try {
     const [result] = await pool.query(
-      'INSERT INTO tiendas (nombre_tienda, calle, numero, colonia, ciudad, codigo_postal, telefono, email, id_usuario, frecuencia_visitas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [nombre_tienda, calle, numero, colonia, ciudad, codigo_postal, telefono, email, id_usuario, frecuencia_visitas]
+      'INSERT INTO tiendas (nombre_tienda, direccion, telefono, email ,id_usuario,frecuencia_visitas) VALUES (?, ?, ?, ?,?,?)',
+      [nombre_tienda, direccion, telefono, email,id_usuario,frecuencia_visitas ]
     );
     res.status(201).json({
       id_tienda: result.insertId,
       nombre_tienda,
-      calle,
-      numero,
-      colonia,
-      ciudad,
-      codigo_postal,
+      direccion,
       telefono,
       email,
       id_usuario,
-      frecuencia_visitas
+      frecuencia_visitas 
     });
   } catch (error) {
     console.error('Error al crear la tienda:', error);
@@ -58,7 +55,7 @@ const createTienda = async (req, res) => {
 // Actualizar una tienda
 const updateTienda = async (req, res) => {
   const { id } = req.params;
-  const { nombre_tienda, calle, numero, colonia, ciudad, codigo_postal, telefono, email, frecuencia_visitas, id_usuario } = req.body;
+  const { nombre_tienda, direccion, telefono, email, frecuencia_visitas, id_usuario } = req.body;
 
   try {
     // Verificar si la tienda existe antes de actualizar
@@ -70,8 +67,8 @@ const updateTienda = async (req, res) => {
 
     // Ejecutar la actualización
     const [result] = await pool.query(
-      'UPDATE tiendas SET nombre_tienda = ?, calle = ?, numero = ?, colonia = ?, ciudad = ?, codigo_postal = ?, telefono = ?, email = ?, frecuencia_visitas = ?, id_usuario = ? WHERE id_tienda = ?',
-      [nombre_tienda, calle, numero, colonia, ciudad, codigo_postal, telefono, email, frecuencia_visitas, id_usuario, id]
+      'UPDATE tiendas SET nombre_tienda = ?, direccion = ?, telefono = ?, email = ?, frecuencia_visitas = ?, id_usuario = ? WHERE id_tienda = ?',
+      [nombre_tienda, direccion, telefono, email, frecuencia_visitas, id_usuario, id]
     );
 
     // Confirmar si realmente se actualizó algún registro
@@ -84,11 +81,7 @@ const updateTienda = async (req, res) => {
       tienda: {
         id_tienda: id,
         nombre_tienda,
-        calle,
-        numero,
-        colonia,
-        ciudad,
-        codigo_postal,
+        direccion,
         telefono,
         email,
         frecuencia_visitas,
@@ -106,6 +99,7 @@ const updateTienda = async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+
 
 // Eliminar una tienda
 const deleteTienda = async (req, res) => {
