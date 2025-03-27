@@ -5,23 +5,18 @@ const getVentasPorZona = async (req, res) => {
     try {
         const [result] = await pool.query(`
             SELECT 
-                t.ciudad,
-                t.calle,
-                t.colonia,
+                SUBSTRING_INDEX(SUBSTRING_INDEX(t.direccion, ',', -2), ',', 1) AS ciudad,
                 SUM(vr.total) AS total_ventas 
             FROM ventas_repartidores vr
             JOIN tiendas t ON t.id_tienda = vr.tienda_id
-            GROUP BY t.ciudad, t.calle, t.colonia
+            GROUP BY ciudad
             ORDER BY total_ventas DESC
         `);
-
         res.json(result);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Error al obtener las ventas por zona.' });
+        manejarError(err, res, 'Error al obtener las ventas por zona.');
     }
 };
-
 
 // Ventas por mes
 const getVentasPorMes = async (req, res) => {
@@ -113,10 +108,10 @@ const getVentasPorSemana = async (req, res) => {
 const getVentasPorAnio = async (req, res) => {
     try {
         const [result] = await pool.query(`
-            SELECT EXTRACT(YEAR FROM fecha_venta) AS ano, SUM(total) AS total_ventas
+            SELECT EXTRACT(YEAR FROM fecha_venta) AS año, SUM(total) AS total_ventas
             FROM ventas_repartidores
-            GROUP BY ano
-            ORDER BY ano
+            GROUP BY año
+            ORDER BY año
         `);
 
         res.json(result);
@@ -190,43 +185,32 @@ const getProductoMasVendidoPorZona = async (req, res) => {
     try {
         const [result] = await pool.query(`
             SELECT 
-                t.nombre_tienda AS zona, 
+                -- Zona es la ciudad (penúltima parte de la dirección)
+                SUBSTRING_INDEX(SUBSTRING_INDEX(t.direccion, ',', -2), ',', 1) AS zona,  
                 p.nombre AS producto, 
                 SUM(vd.cantidad) AS total_vendido,
-                t.calle AS calle,
-                t.colonia AS colonia,  
-                t.ciudad AS ciudad  
+                -- Colonia se renombra como calle (primera parte de la dirección)
+                SUBSTRING_INDEX(t.direccion, ',', 1) AS calle
             FROM ventas_repartidores vr
             JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
             JOIN productos p ON vd.producto_id = p.id_producto
             JOIN tiendas t ON vr.tienda_id = t.id_tienda
-            GROUP BY t.nombre_tienda, p.nombre, t.calle,t.colonia, t.ciudad
-            ORDER BY total_vendido DESC
-            LIMIT 1
+            GROUP BY zona, p.nombre, calle
+            ORDER BY zona, calle, total_vendido DESC
         `);
 
-        if (result.length > 0) {
-            // Formateamos la respuesta para incluir la zona como un objeto con las etiquetas correspondientes
-            const tienda = result[0];
-            const response = {
-                producto: tienda.producto,
-                total_vendido: tienda.total_vendido,
-                zona: {
-                    calle: tienda.calle,
-                    colonia: tienda.colonia,
-                    ciudad: tienda.ciudad
-                }
-            };
-            res.json(response);
-        } else {
-            res.json({ error: 'No se encontraron productos más vendidos por zona.' });
+        // Si no hay resultados, se devuelve un error
+        if (!result || result.length === 0) {
+            return res.json({ error: 'No se encontraron productos más vendidos por zona.' });
         }
+
+        // Devolver los resultados
+        res.json(result);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Error al obtener el producto más vendido por zona.' });
     }
 };
-
 
 
 module.exports = {

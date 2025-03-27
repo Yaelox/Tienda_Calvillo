@@ -82,7 +82,35 @@ async function registrarCompra(req, res) {
     if (connection) connection.release();
   }
 }
+const getUsuarioYEstablecimiento = async (req, res) => {
+  const id = req.params.id;
+  console.log('Recibiendo solicitud para el usuario con ID:', id);
 
+  const query = `
+    SELECT 
+    u.nombre AS nombre_usuario, 
+    t.nombre_tienda
+FROM users u
+LEFT JOIN tiendas t ON u.id_usuario = t.id_usuario
+WHERE u.id_usuario = ?
+LIMIT 10;
+
+  `;
+
+  try {
+      const [results] = await db.pool.query(query, [id]);
+      
+      if (!results.length) {
+          return res.status(404).json({ message: 'No se encontraron compras para este usuario' });
+      }
+
+      console.log('Resultados obtenidos:', results);
+      return res.json(results);
+  } catch (err) {
+      console.error('Error en la consulta:', err);
+      return res.status(500).json({ message: 'Error al obtener los datos' });
+  }
+};
 
 
 // Actualizar estado de la compra
@@ -149,6 +177,7 @@ const eliminarCompra = async (req, res) => {
 
 module.exports = { 
   registrarCompra,
+  getUsuarioYEstablecimiento,
   getCompras,
   getComprasById,
   actualizarEstadoCompra,

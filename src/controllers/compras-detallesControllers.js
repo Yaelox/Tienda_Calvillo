@@ -2,70 +2,76 @@ const db = require('../../config/db');
 
 
 const getCompraDetalles = async (req, res) => {
-    try {
-        const sql = `
-            SELECT 
-                c.id_compra, c.usuario_id, c.total, c.metodo_pago, 
-                c.nombre_completo, c.direccion, c.ciudad, c.codigo_postal, 
-                c.latitud, c.longitud, c.fecha_compra, c.estado,
-                cd.id_compra_detalle, cd.producto_id, cd.cantidad, cd.precio_unitario, cd.subtotal,
-                p.nombre AS producto_nombre  -- Aquí traemos el nombre del producto
-            FROM compras c
-            LEFT JOIN compra_detalles cd ON c.id_compra = cd.compra_id
-            LEFT JOIN productos p ON cd.producto_id = p.id_producto  -- Unimos la tabla productos
-        `;
+  try {
+      const sql = `
+          SELECT 
+              c.id_compra, c.usuario_id, c.total, c.metodo_pago, 
+              c.nombre_completo, c.direccion, c.ciudad, c.codigo_postal, 
+              c.latitud, c.longitud, c.fecha_compra, c.estado,
+              cd.id_compra_detalle, cd.producto_id, cd.cantidad, cd.precio_unitario, cd.subtotal,
+              p.nombre AS producto_nombre, p.imagen AS producto_imagen  -- Traemos la imagen del producto
+          FROM compras c
+          LEFT JOIN compra_detalles cd ON c.id_compra = cd.compra_id
+          LEFT JOIN productos p ON cd.producto_id = p.id_producto  -- Unimos la tabla productos
+      `;
 
-        const [rows] = await db.pool.query(sql);
+      const [rows] = await db.pool.query(sql);
 
-        // Agrupar los productos por compra
-        const comprasMap = new Map();
+      // Agrupar los productos por compra
+      const comprasMap = new Map();
 
-        rows.forEach(row => {
-            if (!comprasMap.has(row.id_compra)) {
-                comprasMap.set(row.id_compra, {
-                    id_compra: row.id_compra,
-                    usuario_id: row.usuario_id,
-                    total: row.total,
-                    metodo_pago: row.metodo_pago,
-                    nombre_completo: row.nombre_completo,
-                    direccion: row.direccion,
-                    ciudad: row.ciudad,
-                    codigo_postal: row.codigo_postal,
-                    latitud: row.latitud,
-                    longitud: row.longitud,
-                    fecha_compra: row.fecha_compra,
-                    estado: row.estado,
-                    productos: []
-                });
-            }
+      rows.forEach(row => {
+          if (!comprasMap.has(row.id_compra)) {
+              comprasMap.set(row.id_compra, {
+                  id_compra: row.id_compra,
+                  usuario_id: row.usuario_id,
+                  total: row.total,
+                  metodo_pago: row.metodo_pago,
+                  nombre_completo: row.nombre_completo,
+                  direccion: row.direccion,
+                  ciudad: row.ciudad,
+                  codigo_postal: row.codigo_postal,
+                  latitud: row.latitud,
+                  longitud: row.longitud,
+                  fecha_compra: row.fecha_compra,
+                  estado: row.estado,
+                  productos: []
+              });
+          }
 
-            // Si hay productos, agrégarlos al array de productos
-            if (row.producto_id) {
-                comprasMap.get(row.id_compra).productos.push({
-                    id_compra_detalle: row.id_compra_detalle,
-                    producto_id: row.producto_id,
-                    nombre: row.producto_nombre,  // Agregamos el nombre del producto
-                    cantidad: row.cantidad,
-                    precio_unitario: row.precio_unitario,
-                    subtotal: row.subtotal
-                });
-            }
-        });
+          // Si hay productos, agrégarlos al array de productos
+          if (row.producto_id) {
+              comprasMap.get(row.id_compra).productos.push({
+                  id_compra_detalle: row.id_compra_detalle,
+                  producto_id: row.producto_id,
+                  nombre: row.producto_nombre,  // Agregamos el nombre del producto
+                  cantidad: row.cantidad,
+                  precio_unitario: row.precio_unitario,
+                  subtotal: row.subtotal,
+                  imagen: row.producto_imagen  // Agregamos la imagen del producto
+              });
+          }
+      });
 
-        res.json(Array.from(comprasMap.values()));
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error al obtener los detalles de compras' });
-    }
+      res.json(Array.from(comprasMap.values()));
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error al obtener los detalles de compras' });
+  }
 };
 
-// Obtener un detalle de compra por ID
 const getCompraDetalleById = async (req, res) => {
   const { id } = req.params;
 
   try {
     const [detalleCompra] = await db.pool.query(
-      'SELECT * FROM compra_detalles WHERE id_compra_detalle = ?',
+      `SELECT 
+        cd.*, 
+        p.nombre AS producto_nombre, 
+        p.imagen AS producto_imagen  -- Traemos la imagen del producto
+      FROM compra_detalles cd
+      LEFT JOIN productos p ON cd.producto_id = p.id_producto
+      WHERE cd.id_compra_detalle = ?`,
       [id]
     );
 
@@ -79,6 +85,7 @@ const getCompraDetalleById = async (req, res) => {
     res.status(500).json({ message: 'Error en el servidor' });
   }
 };
+
 
 // Registrar un detalle de compra
 const registrarCompraDetalle = async (req, res) => {
