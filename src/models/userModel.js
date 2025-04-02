@@ -4,18 +4,19 @@ class User {
     static async findByEmail(email) {
         try {
             const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+            console.log('Usuario encontrado:', rows[0]); // Verificar si 'id' está presente
             return rows[0];
         } catch (err) {
             console.error('Error in findByEmail:', err);
             throw err;
         }
     }
-
-    static async createUser(usuario, email, passwordHash, tipo_usuario = 'cliente') {
+    
+    static async createUser(nombre,usuario, email, passwordHash,telefono, tipo_usuario = 'cliente') {
       try {
           const [result] = await pool.query(
-              'INSERT INTO users (usuario, email, password, tipo_usuario) VALUES (?, ?, ?, ?)',
-              [usuario, email, passwordHash, tipo_usuario]
+              'INSERT INTO users (nombre,usuario, email, password,telefono, tipo_usuario) VALUES (?, ?, ?, ?,?,?)',
+              [nombre,usuario, email, passwordHash,telefono, tipo_usuario]
           );
           return result;
       } catch (err) {
