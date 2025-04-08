@@ -179,12 +179,43 @@ const eliminarVenta = async (req, res) => {
 
 const obtenerTodasLasVentas = async (req, res) => {
     try {
-        const query = "SELECT * FROM ventas_repartidores";
+        // Consulta mejorada para obtener las ventas con todos los detalles, incluyendo productos
+        const query = `
+           SELECT 
+                vr.id_venta,
+                vr.total,
+                vr.fecha_venta,
+                vr.foto_venta,
+                repartidor.nombre AS nombre_repartidor,
+                t.nombre_tienda,
+                propietario.nombre AS propietario_tienda,
+                JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'id_venta_detalle', vd.id_venta_detalle,
+                        'producto_id', vd.producto_id,
+                        'cantidad', vd.cantidad,
+                        'precio', vd.precio,
+                        'subtotal', vd.subtotal,
+                        'nombre_producto', p.nombre,
+                        'descripcion', p.descripcion
+                    )
+                ) AS detalles
+            FROM ventas_repartidores vr
+            JOIN users repartidor ON vr.repartidor_id = repartidor.id_usuario
+            JOIN tiendas t ON vr.tienda_id = t.id_tienda
+            JOIN users propietario ON t.id_usuario = propietario.id_usuario
+            JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
+            JOIN productos p ON vd.producto_id = p.id_producto
+            GROUP BY vr.id_venta;
+        `;
+        
+        // Ejecutar la consulta en la base de datos
         const [ventas] = await pool.query(query);
 
-        res.json({ success: true, ventas });
+        // Devolver solo las ventas sin la propiedad 'success'
+        res.json(ventas);
     } catch (error) {
-        console.error("Error al obtener todas las ventas:", error);
+        console.error("Error al obtener las ventas con detalles:", error);
         res.status(500).json({ error: "Error interno del servidor" });
     }
 };
