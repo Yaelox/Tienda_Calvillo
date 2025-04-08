@@ -11,7 +11,7 @@ const getCategorias = async (req, res) => {
   }
 };
 
-const  getCategoriasById = async (req, res) => {
+const getCategoriasById = async (req, res) => {
   const { id } = req.params;
   try {
     const [rows] = await pool.query('SELECT * FROM categorias WHERE id_categoria = ?', [id]);
