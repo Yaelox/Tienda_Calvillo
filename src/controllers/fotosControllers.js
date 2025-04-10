@@ -16,7 +16,7 @@ const getFotos = async (req, res) => {
     const { titulo,imagen,  id_usuario} = req.body;
     try {
       const [result] = await pool.query(
-        'INSERT INTO fotos (titulo,foto,  id_usuario) VALUES (?,?,?)',
+        'INSERT INTO fotos (titulo,imagen,id_usuario) VALUES (?,?,?)',
         [titulo,imagen, id_usuario]
       );
       res.status(201).json({
@@ -24,8 +24,8 @@ const getFotos = async (req, res) => {
         titulo,imagen, id_usuario
       });
     } catch (error) {
-      console.error('Error al crear el Poster:', error);
-      res.status(500).json({ message: 'Error al crear el Poster' });
+      console.error('Error al subir la foto:', error);
+      res.status(500).json({ message: 'Error al subir la foto' });
     }
   };
 
