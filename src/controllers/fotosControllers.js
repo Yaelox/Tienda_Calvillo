@@ -15,14 +15,14 @@ const getFotos = async (req, res) => {
   const getFotosAgrupadasPorFecha = async (req, res) => {
     try {
       const [fotos] = await pool.query(`
-        SELECT foto_id, titulo, imagen, DATE(fecha_subida) AS fecha, id_usuario
+        SELECT foto_id, titulo, imagen, fecha_subida, id_usuario
         FROM fotos
         ORDER BY fecha_subida DESC
       `);
   
-      // Agrupar por fecha
+      // Agrupar por fecha formateada YYYY-MM-DD
       const agrupadas = fotos.reduce((acc, foto) => {
-        const fecha = foto.fecha;
+        const fecha = new Date(foto.fecha_subida).toISOString().split('T')[0];
         if (!acc[fecha]) {
           acc[fecha] = [];
         }
@@ -36,6 +36,7 @@ const getFotos = async (req, res) => {
       res.status(500).json({ message: 'Error al obtener las fotos' });
     }
   };
+  
   
   const postFoto= async (req, res) => {
     const { titulo,imagen,  id_usuario} = req.body;
