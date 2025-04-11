@@ -187,7 +187,6 @@ const obtenerTodasLasVentas = async (req, res) => {
                 vr.fecha_venta,
                 vr.foto_venta,
                 repartidor.nombre AS nombre_repartidor,
-                t.nombre_tienda,
                 propietario.nombre AS propietario_tienda,
                 JSON_ARRAYAGG(
                     JSON_OBJECT(

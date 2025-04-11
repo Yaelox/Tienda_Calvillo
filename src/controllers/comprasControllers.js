@@ -89,7 +89,6 @@ const getUsuarioYEstablecimiento = async (req, res) => {
   const query = `
     SELECT 
     u.nombre AS nombre_usuario, 
-    t.nombre_tienda
 FROM users u
 LEFT JOIN tiendas t ON u.id_usuario = t.id_usuario
 WHERE u.id_usuario = ?
