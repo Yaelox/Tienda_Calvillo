@@ -12,6 +12,34 @@ const getFotos = async (req, res) => {
   };
 
 
+  
+const getFotosporfecha = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    let query = 'SELECT * FROM fotos';
+    const params = [];
+
+    if (startDate && endDate) {
+      query += ' WHERE fecha BETWEEN ? AND ?';
+      params.push(startDate, endDate);
+    } else if (startDate) {
+      query += ' WHERE fecha >= ?';
+      params.push(startDate);
+    } else if (endDate) {
+      query += ' WHERE fecha <= ?';
+      params.push(endDate);
+    }
+
+    const [fotos] = await pool.query(query, params);
+
+    res.status(200).json(fotos);
+  } catch (error) {
+    console.error('Error al obtener las fotos', error);
+    res.status(500).json({ message: 'Error al obtener las fotos' });
+  }
+};
+
   const postFoto= async (req, res) => {
     const { titulo,imagen,  id_usuario} = req.body;
     try {
@@ -92,6 +120,7 @@ const  getFotosbyId = async (req, res) => {
     postFoto,
     deleteFoto,
     getFotosbyId,
-    updateFoto
+    updateFoto,
+    getFotosporfecha
 
 };

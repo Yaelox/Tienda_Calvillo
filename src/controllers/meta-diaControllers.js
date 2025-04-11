@@ -1,4 +1,6 @@
 const { pool } = require("../../config/db");
+
+
 const getMetaDelDia = async (req, res) => {
   try {
     // Llamar al procedimiento almacenado para verificar o crear la meta del día
@@ -38,4 +40,6 @@ const getMetaDelDia = async (req, res) => {
   module.exports = {
     getMetaDelDia
   };
+  
+
   
