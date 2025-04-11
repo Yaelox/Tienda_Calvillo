@@ -90,7 +90,7 @@ const getUsuarioYEstablecimiento = async (req, res) => {
     SELECT 
     u.nombre AS nombre_usuario, 
 FROM users u
-LEFT JOIN tiendas t ON u.id_usuario = t.id_usuario
+LEFT JOIN ON u.id_usuario = t.id_usuario
 WHERE u.id_usuario = ?
 LIMIT 10;
 

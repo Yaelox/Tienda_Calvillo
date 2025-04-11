@@ -201,7 +201,6 @@ const obtenerTodasLasVentas = async (req, res) => {
                 ) AS detalles
             FROM ventas_repartidores vr
             JOIN users repartidor ON vr.repartidor_id = repartidor.id_usuario
-            JOIN tiendas t ON vr.tienda_id = t.id_tienda
             JOIN users propietario ON t.id_usuario = propietario.id_usuario
             JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
             JOIN productos p ON vd.producto_id = p.id_producto
