@@ -12,34 +12,31 @@ const getFotos = async (req, res) => {
   };
 
 
+  const getFotosAgrupadasPorFecha = async (req, res) => {
+    try {
+      const [fotos] = await pool.query(`
+        SELECT foto_id, titulo, imagen, DATE(fecha_subida) AS fecha, id_usuario
+        FROM fotos
+        ORDER BY fecha_subida DESC
+      `);
   
-const getFotosporfecha = async (req, res) => {
-  try {
-    const { startDate, endDate } = req.query;
-
-    let query = 'SELECT * FROM fotos';
-    const params = [];
-
-    if (startDate && endDate) {
-      query += ' WHERE fecha BETWEEN ? AND ?';
-      params.push(startDate, endDate);
-    } else if (startDate) {
-      query += ' WHERE fecha >= ?';
-      params.push(startDate);
-    } else if (endDate) {
-      query += ' WHERE fecha <= ?';
-      params.push(endDate);
+      // Agrupar por fecha
+      const agrupadas = fotos.reduce((acc, foto) => {
+        const fecha = foto.fecha;
+        if (!acc[fecha]) {
+          acc[fecha] = [];
+        }
+        acc[fecha].push(foto);
+        return acc;
+      }, {});
+  
+      res.status(200).json(agrupadas);
+    } catch (error) {
+      console.error('Error al obtener las fotos agrupadas por fecha', error);
+      res.status(500).json({ message: 'Error al obtener las fotos' });
     }
-
-    const [fotos] = await pool.query(query, params);
-
-    res.status(200).json(fotos);
-  } catch (error) {
-    console.error('Error al obtener las fotos', error);
-    res.status(500).json({ message: 'Error al obtener las fotos' });
-  }
-};
-
+  };
+  
   const postFoto= async (req, res) => {
     const { titulo,imagen,  id_usuario} = req.body;
     try {
@@ -121,6 +118,6 @@ const  getFotosbyId = async (req, res) => {
     deleteFoto,
     getFotosbyId,
     updateFoto,
-    getFotosporfecha
+    getFotosAgrupadasPorFecha
 
 };
