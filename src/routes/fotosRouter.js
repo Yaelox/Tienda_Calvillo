@@ -5,7 +5,7 @@ const fotoController = require('../controllers/fotosControllers');
 router.post('/foto',fotoController.postFoto);
 router.get('/foto', fotoController.getFotos);
 router.get('/foto/:id', fotoController.getFotosbyId);
-router.get('/foto/fecha', fotoController.getFotosporfecha)
+router.get('/foto/fecha', fotoController.getFotosAgrupadasPorFecha)
 router.put('/foto/:id', fotoController.updateFoto);
 router.delete('/foto/:id', fotoController.deleteFoto);
 
