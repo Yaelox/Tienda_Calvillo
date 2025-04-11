@@ -16,7 +16,7 @@ const registrarVenta = async (req, res) => {
 
         // Registrar la venta en la tabla ventas_repartidores
         const queryVenta = "INSERT INTO ventas_repartidores (repartidor_id, total, motivo, foto_venta) VALUES (?, ?, ?,?)";
-        const [ventaResult] = await connection.query(queryVenta, [repartidor_id,motivo, total, foto_venta]);
+        const [ventaResult] = await connection.query(queryVenta, [repartidor_id, total,motivo, foto_venta]);
 
         // Obtener el id de la venta registrada
         const ventaId = ventaResult.insertId;
