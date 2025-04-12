@@ -69,7 +69,7 @@ const getUbicaciones = async (req, res) => {
 
 const getMotivosUbicacion = async (req, res) => {
   try {
-    const [rows] = await db.query(`
+    const [rows] = await pool.query(`
       SELECT 
         u.id, 
         u.nombre_tienda, 
