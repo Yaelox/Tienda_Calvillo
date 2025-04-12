@@ -1,5 +1,5 @@
 const { pool } = require("../../config/db");
-const { updateFoto } = require("./fotosControllers");
+
 
 const PostUbicacion= async (req, res) => {
     const { nombre_tienda, latitud, longitud} = req.body;
