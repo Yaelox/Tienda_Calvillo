@@ -1,10 +1,10 @@
 const { pool } = require("../../config/db"); // Asegúrate de usar la ruta correcta
 
 const registrarVenta = async (req, res) => {
-    const { repartidor_id, total,motivo, productos, foto_venta } = req.body; // Se espera un array de productos
+    const { repartidor_id, total,motivo,id_ubicacion, productos, foto_venta } = req.body; // Se espera un array de productos
 
     // Verificar que todos los campos necesarios están presentes
-    if (!repartidor_id || !total || !foto_venta || !motivo || !productos || productos.length === 0) {
+    if (!repartidor_id || !total || !foto_venta || !motivo || id_ubicacion || !productos || productos.length === 0) {
         return res.status(400).json({ error: "Todos los campos son obligatorios, incluyendo los productos" });
     }
 
@@ -15,8 +15,8 @@ const registrarVenta = async (req, res) => {
         await connection.beginTransaction();
 
         // Registrar la venta en la tabla ventas_repartidores
-        const queryVenta = "INSERT INTO ventas_repartidores (repartidor_id, total, motivo, foto_venta) VALUES (?, ?, ?,?)";
-        const [ventaResult] = await connection.query(queryVenta, [repartidor_id, total,motivo, foto_venta]);
+        const queryVenta = "INSERT INTO ventas_repartidores (repartidor_id, total, motivo, id_ubicacion,foto_venta) VALUES (?, ?, ?,?,?)";
+        const [ventaResult] = await connection.query(queryVenta, [repartidor_id, total,motivo,id_ubicacion, foto_venta]);
 
         // Obtener el id de la venta registrada
         const ventaId = ventaResult.insertId;
@@ -135,14 +135,14 @@ const obtenerVentasPorRepartidor = async (req, res) => {
 const actualizarVenta = async (req, res) => {
     try {
         const { id_venta } = req.params;
-        const { repartidor_id, tienda_id, monto,motivo } = req.body;
+        const { repartidor_id, tienda_id, monto,motivo,id_ubicacion } = req.body;
 
         if (!id_venta || !repartidor_id || !tienda_id || !total) {
             return res.status(400).json({ error: "Todos los campos son obligatorios" });
         }
 
-        const query = "UPDATE ventas_repartidores SET repartidor_id = ?, tienda_id = ?, monto = ?,motivo=?, foto_venta = ? WHERE id_venta = ?";
-        const [result] = await pool.query(query, [repartidor_id, tienda_id, monto,motivo, foto_venta, id_venta]);
+        const query = "UPDATE ventas_repartidores SET repartidor_id = ?, tienda_id = ?, monto = ?,motivo=?, id_ubicacion=?, foto_venta = ? WHERE id_venta = ?";
+        const [result] = await pool.query(query, [repartidor_id, tienda_id, monto,motivo, foto_venta,id_ubicacion, id_venta]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: "Venta no encontrada" });
