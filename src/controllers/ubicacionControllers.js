@@ -66,12 +66,39 @@ const getUbicaciones = async (req, res) => {
     }
   };
 
+
+const getMotivosUbicacion = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        u.id, 
+        u.nombre_tienda, 
+        u.latitud, 
+        u.longitud, 
+        u.fecha_registro, 
+        vr.motivo
+      FROM ubicaciones u
+      LEFT JOIN ventas_repartidores vr 
+        ON vr.id_ubicacion = u.id
+        AND vr.fecha_venta = (
+          SELECT MAX(fecha_venta)
+          FROM ventas_repartidores
+          WHERE id_ubicacion = u.id
+        );
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error al obtener ubicaciones con motivo:', error);
+    res.status(500).json({ error: 'Error al obtener ubicaciones' });
+  }
+}
   
   module.exports = {
     getUbicaciones,
     PostUbicacion,
     deleteUbicacion,
-    updateUbicacion
+    updateUbicacion,
+    getMotivosUbicacion
 
   };
   

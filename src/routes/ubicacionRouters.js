@@ -4,7 +4,8 @@ const router = express.Router();
 
 
 router.post('/ubi', UBIControllers.PostUbicacion);         // Crear producto
-router.get('/ubi',UBIControllers.getUbicaciones);           // Obtener todos los productos   
+router.get('/ubi',UBIControllers.getUbicaciones); 
+router.get('/ubi/motivo',UBIControllers.getMotivosUbicacion);                // Obtener todos los productos   
 router.put('/ubi/:id', UBIControllers.updateUbicacion);      // Actualizar producto por ID
 router.delete('/ubi/:id',UBIControllers.deleteUbicacion);   // Eliminar producto por ID
 
