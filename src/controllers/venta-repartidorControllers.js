@@ -4,7 +4,7 @@ const registrarVenta = async (req, res) => {
     const { repartidor_id, total,motivo,id_ubicacion, productos, foto_venta } = req.body; // Se espera un array de productos
 
     // Verificar que todos los campos necesarios están presentes
-    if (!repartidor_id || !total || !foto_venta || !motivo || id_ubicacion || !productos || productos.length === 0) {
+    if (!repartidor_id || !total || !foto_venta || !motivo || !id_ubicacion || !productos || productos.length === 0) {
         return res.status(400).json({ error: "Todos los campos son obligatorios, incluyendo los productos" });
     }
 
@@ -181,13 +181,13 @@ const obtenerTodasLasVentas = async (req, res) => {
     try {
         // Consulta mejorada para obtener las ventas con todos los detalles, incluyendo productos
         const query = `
-           SELECT 
+          
+SELECT 
                 vr.id_venta,
                 vr.total,
                 vr.fecha_venta,
                 vr.foto_venta,
                 repartidor.nombre AS nombre_repartidor,
-                propietario.nombre AS propietario_tienda,
                 JSON_ARRAYAGG(
                     JSON_OBJECT(
                         'id_venta_detalle', vd.id_venta_detalle,
@@ -201,10 +201,10 @@ const obtenerTodasLasVentas = async (req, res) => {
                 ) AS detalles
             FROM ventas_repartidores vr
             JOIN users repartidor ON vr.repartidor_id = repartidor.id_usuario
-            JOIN users propietario ON t.id_usuario = propietario.id_usuario
             JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
             JOIN productos p ON vd.producto_id = p.id_producto
             GROUP BY vr.id_venta;
+        
         `;
         
         // Ejecutar la consulta en la base de datos
