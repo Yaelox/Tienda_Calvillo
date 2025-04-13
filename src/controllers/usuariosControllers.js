@@ -1,4 +1,5 @@
 const { pool } = require('../../config/db');
+const bcrypt = require('bcryptjs')
 
 // Obtener todos los usuarios
 const getUsers = async (req, res) => {
@@ -76,22 +77,22 @@ const deleteUser = async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+
+
 const actualizar = async (req, res) => {
-  const { email, password} = req.body;
+  const { email, password } = req.body;
 
   console.log('Datos recibidos:', { email, password });
 
+  // Validación de los campos requeridos
   if (!email || !password) {
-    console.warn('Faltan datos: email o nueva contraseña');
+    console.warn('Faltan datos: email o password');
     return res.status(400).json({ error: 'Email y nueva contraseña son requeridos.' });
   }
 
-  // Verificar si el usuario existe
-  pool.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
-    if (err) {
-      console.error('Error al consultar el email:', err);
-      return res.status(500).json({ error: 'Error en la base de datos.' });
-    }
+  try {
+    // Verificar si el usuario con el email proporcionado existe
+    const [results] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
 
     if (results.length === 0) {
       console.warn('Usuario no encontrado con email:', email);
@@ -100,29 +101,30 @@ const actualizar = async (req, res) => {
 
     console.log('Usuario encontrado:', results[0]);
 
-    try {
-      // Encriptar la nueva contraseña
-      const hashedPassword = await bcrypt.hash(password, 10);
-      console.log('Contraseña encriptada:', hashedPassword);
+    // Encriptar la nueva contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('Contraseña encriptada:', hashedPassword);
 
-      // Actualizar la contraseña
-      pool.query('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email], (err) => {
-        if (err) {
-          console.error('Error al actualizar la contraseña:', err);
-          return res.status(500).json({ error: 'Error al actualizar la contraseña.' });
-        }
+    // Actualizar la contraseña en la base de datos
+    const [updateResult] = await pool.query(
+      'UPDATE users SET password = ? WHERE email = ?',
+      [hashedPassword, email]
+    );
 
-        console.log('Contraseña actualizada correctamente para el email:', email);
-        return res.status(200).json({ message: 'Contraseña actualizada correctamente.' });
-      });
-
-    } catch (hashError) {
-      console.error('Error al encriptar la contraseña:', hashError);
-      return res.status(500).json({ error: 'Error al procesar la contraseña.' });
+    // Verificar si la actualización fue exitosa
+    if (updateResult.affectedRows === 0) {
+      console.warn('No se actualizó ninguna fila para el email:', email);
+      return res.status(500).json({ error: 'No se pudo actualizar la contraseña.' });
     }
-  });
-};
 
+    console.log('Contraseña actualizada correctamente para:', email);
+    return res.status(200).json({ message: 'Contraseña actualizada correctamente.' });
+    
+  } catch (error) {
+    console.error('Error al procesar la solicitud:', error);
+    return res.status(500).json({ error: 'Ocurrió un error al procesar la solicitud.' });
+  }
+};
 
 
 module.exports = {
