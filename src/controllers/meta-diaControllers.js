@@ -3,17 +3,19 @@ const { pool } = require("../../config/db");
 
 const getMetaDelDia = async (req, res) => {
   try {
-    // Llamar al procedimiento almacenado para verificar o crear la meta del día
-    await pool.query('CALL CrearMetaDelDia()');
-
-    // Obtener la meta del día después de ejecutar el procedimiento
+    // Obtener la meta del día para la fecha actual
     const [metaRows] = await pool.query(`
       SELECT meta_contenedores FROM metas_ventas WHERE fecha = CURDATE()
     `);
 
-    let meta = metaRows[0]?.meta_contenedores;
+    // Verificar si se encontró la meta para el día de hoy
+    const meta = metaRows[0]?.meta_contenedores;
 
-    // Obtener contenedores vendidos hoy
+    if (!meta) {
+      return res.status(404).json({ error: 'No se encontró la meta para el día de hoy' });
+    }
+
+    // Obtener los contenedores vendidos hoy
     const [ventasRow] = await pool.query(`
       SELECT SUM(vd.cantidad) AS contenedores_vendidos
       FROM ventas_repartidores vr
@@ -21,7 +23,10 @@ const getMetaDelDia = async (req, res) => {
       WHERE DATE(vr.fecha_venta) = CURDATE()
     `);
 
-    const vendidos = ventasRow[0].contenedores_vendidos || 0;
+    // Asegurarse de que el resultado de ventas no sea nulo
+    const vendidos = ventasRow[0]?.contenedores_vendidos || 0;
+
+    // Calcular el progreso como un porcentaje
     const progreso = Math.min(100, Math.round((vendidos / meta) * 100));
 
     res.json({
@@ -35,6 +40,7 @@ const getMetaDelDia = async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 
 const setMetaDelDia = async (req, res) => {
   try {
