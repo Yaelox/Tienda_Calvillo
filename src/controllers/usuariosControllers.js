@@ -76,26 +76,25 @@ const deleteUser = async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
-
 const actualizar = async (req, res) => {
-  const { usuario, nuevaContrasena } = req.body;
+  const { email, nuevaContrasena } = req.body;
 
-  console.log('Datos recibidos:', { usuario, nuevaContrasena });
+  console.log('Datos recibidos:', { email, nuevaContrasena });
 
-  if (!usuario || !nuevaContrasena) {
-    console.warn('Faltan datos: usuario o nueva contraseña');
-    return res.status(400).json({ error: 'Usuario y nueva contraseña son requeridos.' });
+  if (!email || !nuevaContrasena) {
+    console.warn('Faltan datos: email o nueva contraseña');
+    return res.status(400).json({ error: 'Email y nueva contraseña son requeridos.' });
   }
 
   // Verificar si el usuario existe
-  pool.query('SELECT * FROM users WHERE usuario = ?', [usuario], async (err, results) => {
+  pool.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
     if (err) {
-      console.error('Error al consultar el usuario:', err);
+      console.error('Error al consultar el email:', err);
       return res.status(500).json({ error: 'Error en la base de datos.' });
     }
 
     if (results.length === 0) {
-      console.warn('Usuario no encontrado:', usuario);
+      console.warn('Usuario no encontrado con email:', email);
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
@@ -107,13 +106,13 @@ const actualizar = async (req, res) => {
       console.log('Contraseña encriptada:', hashedPassword);
 
       // Actualizar la contraseña
-      pool.query('UPDATE users SET password = ? WHERE usuario = ?', [hashedPassword, usuario], (err) => {
+      pool.query('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email], (err) => {
         if (err) {
           console.error('Error al actualizar la contraseña:', err);
           return res.status(500).json({ error: 'Error al actualizar la contraseña.' });
         }
 
-        console.log('Contraseña actualizada correctamente para el usuario:', usuario);
+        console.log('Contraseña actualizada correctamente para el email:', email);
         return res.status(200).json({ message: 'Contraseña actualizada correctamente.' });
       });
 
@@ -123,6 +122,7 @@ const actualizar = async (req, res) => {
     }
   });
 };
+
 
 
 module.exports = {
