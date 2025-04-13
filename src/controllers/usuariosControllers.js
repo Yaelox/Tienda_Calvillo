@@ -80,31 +80,47 @@ const deleteUser = async (req, res) => {
 const actualizar = async (req, res) => {
   const { usuario, nuevaContrasena } = req.body;
 
+  console.log('Datos recibidos:', { usuario, nuevaContrasena });
+
   if (!usuario || !nuevaContrasena) {
+    console.warn('Faltan datos: usuario o nueva contraseña');
     return res.status(400).json({ error: 'Usuario y nueva contraseña son requeridos.' });
   }
 
   // Verificar si el usuario existe
   pool.query('SELECT * FROM users WHERE usuario = ?', [usuario], async (err, results) => {
     if (err) {
+      console.error('Error al consultar el usuario:', err);
       return res.status(500).json({ error: 'Error en la base de datos.' });
     }
 
     if (results.length === 0) {
+      console.warn('Usuario no encontrado:', usuario);
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
-    // Encriptar la nueva contraseña
-    const hashedPassword = await bcrypt.hash(nuevaContrasena, 10);
+    console.log('Usuario encontrado:', results[0]);
 
-    // Actualizar la contraseña
-    pool.query('UPDATE users SET password = ? WHERE usuario = ?', [hashedPassword, usuario], (err) => {
-      if (err) {
-        return res.status(500).json({ error: 'Error al actualizar la contraseña.' });
-      }
+    try {
+      // Encriptar la nueva contraseña
+      const hashedPassword = await bcrypt.hash(nuevaContrasena, 10);
+      console.log('Contraseña encriptada:', hashedPassword);
 
-      return res.status(200).json({ message: 'Contraseña actualizada correctamente.' });
-    });
+      // Actualizar la contraseña
+      pool.query('UPDATE users SET password = ? WHERE usuario = ?', [hashedPassword, usuario], (err) => {
+        if (err) {
+          console.error('Error al actualizar la contraseña:', err);
+          return res.status(500).json({ error: 'Error al actualizar la contraseña.' });
+        }
+
+        console.log('Contraseña actualizada correctamente para el usuario:', usuario);
+        return res.status(200).json({ message: 'Contraseña actualizada correctamente.' });
+      });
+
+    } catch (hashError) {
+      console.error('Error al encriptar la contraseña:', hashError);
+      return res.status(500).json({ error: 'Error al procesar la contraseña.' });
+    }
   });
 };
 
