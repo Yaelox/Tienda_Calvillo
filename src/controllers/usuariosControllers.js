@@ -77,11 +77,11 @@ const deleteUser = async (req, res) => {
   }
 };
 const actualizar = async (req, res) => {
-  const { email, nuevaContrasena } = req.body;
+  const { email, password} = req.body;
 
-  console.log('Datos recibidos:', { email, nuevaContrasena });
+  console.log('Datos recibidos:', { email, password });
 
-  if (!email || !nuevaContrasena) {
+  if (!email || !password) {
     console.warn('Faltan datos: email o nueva contraseña');
     return res.status(400).json({ error: 'Email y nueva contraseña son requeridos.' });
   }
@@ -102,7 +102,7 @@ const actualizar = async (req, res) => {
 
     try {
       // Encriptar la nueva contraseña
-      const hashedPassword = await bcrypt.hash(nuevaContrasena, 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
       console.log('Contraseña encriptada:', hashedPassword);
 
       // Actualizar la contraseña
