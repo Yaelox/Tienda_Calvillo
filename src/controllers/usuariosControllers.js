@@ -77,9 +77,42 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const actualizar = async (req, res) => {
+  const { usuario, nuevaContrasena } = req.body;
+
+  if (!usuario || !nuevaContrasena) {
+    return res.status(400).json({ error: 'Usuario y nueva contraseña son requeridos.' });
+  }
+
+  // Verificar si el usuario existe
+  pool.query('SELECT * FROM users WHERE usuario = ?', [usuario], async (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error en la base de datos.' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    // Encriptar la nueva contraseña
+    const hashedPassword = await bcrypt.hash(nuevaContrasena, 10);
+
+    // Actualizar la contraseña
+    pool.query('UPDATE users SET password = ? WHERE usuario = ?', [hashedPassword, usuario], (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error al actualizar la contraseña.' });
+      }
+
+      return res.status(200).json({ message: 'Contraseña actualizada correctamente.' });
+    });
+  });
+};
+
+
 module.exports = {
   getUsers,
   getUserById,
   updateUser,
   deleteUser,
+  actualizar
 };
