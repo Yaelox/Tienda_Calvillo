@@ -36,9 +36,34 @@ const getMetaDelDia = async (req, res) => {
   }
 };
 
-  
+const setMetaDelDia = async (req, res) => {
+  try {
+    const { meta_contenedores } = req.body;
+
+    // Verificar que meta_contenedores sea un número válido
+    if (!meta_contenedores || isNaN(meta_contenedores)) {
+      return res.status(400).json({ error: 'meta_contenedores es requerido y debe ser un número válido' });
+    }
+
+    // Insertar o actualizar la meta del día para la fecha actual
+    const result = await pool.query(`
+      INSERT INTO metas_ventas (fecha, meta_contenedores)
+      VALUES (CURDATE(), ?)
+      ON DUPLICATE KEY UPDATE meta_contenedores = VALUES(meta_contenedores)
+    `, [meta_contenedores]);
+
+    // Respuesta exitosa
+    return res.json({ message: 'Meta del día guardada correctamente', meta_contenedores });
+
+  } catch (err) {
+    console.error('Error al guardar la meta del día:', err);
+    return res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
   module.exports = {
-    getMetaDelDia
+    getMetaDelDia,
+    setMetaDelDia
   };
   
 
