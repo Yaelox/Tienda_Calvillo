@@ -4,28 +4,33 @@ const { pool } = require('../../config/db'); // Importa el pool de conexiones
 const getVentasPorMes = async (req, res) => {
     try {
         const [result] = await pool.query(`
-                SELECT 
-            EXTRACT(YEAR FROM vr.fecha_venta) AS año,
-            MONTHNAME(vr.fecha_venta) AS mes,
-            MONTH(vr.fecha_venta) AS mes_numero,
-            p.nombre AS producto,
-            SUM(vr.total) AS total_ventas,
-            SUM(vd.cantidad) AS total_unidades,
-            SUM(vd.subtotal) AS total_por_producto
-        FROM ventas_repartidores vr
-        JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
-        JOIN productos p ON vd.producto_id = p.id_producto
-        GROUP BY año, mes, mes_numero, p.nombre
-        ORDER BY año, mes_numero, p.nombre;
-
+            SELECT 
+                EXTRACT(YEAR FROM vr.fecha_venta) AS año,
+                MONTHNAME(vr.fecha_venta) AS mes,
+                MONTH(vr.fecha_venta) AS mes_numero,
+                p.nombre AS producto,
+                SUM(vr.total) AS total_ventas,
+                SUM(vd.cantidad) AS total_unidades,
+                SUM(vd.subtotal) AS total_por_producto
+            FROM ventas_repartidores vr
+            JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
+            JOIN productos p ON vd.producto_id = p.id_producto
+            GROUP BY año, mes, mes_numero, p.nombre
+            ORDER BY año, mes_numero, p.nombre;
         `);
 
+        // Mapeamos los resultados para incluir todos los datos necesarios
         const resultTraducido = result.map(row => ({
             año: row.año,
-            mes: traducirMes(row.mes),
+            mes: traducirMes(row.mes), // Traducir el nombre del mes
+            mes_numero: row.mes_numero,
+            producto: row.producto,
+            total_unidades: row.total_unidades,
+            total_por_producto: row.total_por_producto,
             total_ventas: row.total_ventas
         }));
 
+        // Enviamos la respuesta con todos los datos
         res.json(resultTraducido);
     } catch (err) {
         console.error(err);
@@ -51,38 +56,55 @@ const traducirMes = (mesIngles) => {
     return meses[mesIngles] || mesIngles;
 };
 
-// Ventas por semana y mes
 const getVentasPorSemana = async (req, res) => {
     try {
         const [result] = await pool.query(`
-                SELECT 
-            MONTHNAME(vr.fecha_venta) AS mes,
-            EXTRACT(WEEK FROM vr.fecha_venta) AS semana_del_mes,
-            p.nombre AS producto,
-            SUM(vd.cantidad) AS cantidad_vendida,
-            SUM(vd.subtotal) AS total_por_producto
-        FROM ventas_repartidores vr
-        JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
-        JOIN productos p ON vd.producto_id = p.id_producto
-        GROUP BY mes, semana_del_mes, p.nombre
-        ORDER BY 
-            FIELD(mes, 'January', 'February', 'March', 'April', 'May', 'June', 
+            SELECT 
+                MONTHNAME(vr.fecha_venta) AS mes,
+                EXTRACT(WEEK FROM vr.fecha_venta) AS semana_del_mes,
+                p.nombre AS producto,
+                SUM(vd.cantidad) AS cantidad_vendida,
+                SUM(vd.subtotal) AS total_por_producto
+            FROM ventas_repartidores vr
+            JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
+            JOIN productos p ON vd.producto_id = p.id_producto
+            GROUP BY mes, semana_del_mes, p.nombre
+            ORDER BY 
+                FIELD(mes, 'January', 'February', 'March', 'April', 'May', 'June', 
                         'July', 'August', 'September', 'October', 'November', 'December'), 
-            semana_del_mes,
-            p.nombre;
+                semana_del_mes,
+                p.nombre;
         `);
 
+        // Formateamos los resultados para incluir las semanas con la información de los productos
         const resultFormateado = result.reduce((acc, row) => {
             if (!acc[row.mes]) {
                 acc[row.mes] = [];
             }
-            acc[row.mes].push({
-                semana: `Semana ${row.semana_del_mes}`,
-                ventas: row.total_ventas
+            
+            // Encontramos la semana correspondiente dentro del mes
+            let semanaExistente = acc[row.mes].find(semana => semana.semana === `Semana ${row.semana_del_mes}`);
+            
+            if (!semanaExistente) {
+                // Si la semana no existe aún, la creamos
+                semanaExistente = {
+                    semana: `Semana ${row.semana_del_mes}`,
+                    productos: []
+                };
+                acc[row.mes].push(semanaExistente);
+            }
+
+            // Añadimos la información del producto a la semana correspondiente
+            semanaExistente.productos.push({
+                producto: row.producto,
+                cantidad_vendida: row.cantidad_vendida,
+                total_por_producto: row.total_por_producto
             });
+
             return acc;
         }, {});
 
+        // Convertimos el objeto a un formato adecuado para enviar
         const resultFinal = Object.keys(resultFormateado).map(mes => ({
             mes,
             semanas: resultFormateado[mes]
@@ -94,6 +116,7 @@ const getVentasPorSemana = async (req, res) => {
         res.status(500).json({ error: 'Error al obtener las ventas por semana.' });
     }
 };
+
 
 // Ventas por año
 const getVentasPorAnio = async (req, res) => {
@@ -150,27 +173,44 @@ const traducirDiaSemana = (diaIngles) => {
     };
     return dias[diaIngles] || diaIngles;
 };
-
-// Ventas por día
 const getVentasPorDia = async (req, res) => {
     try {
         const [result] = await pool.query(`
             SELECT 
-                DATE(fecha_venta) AS dia, 
-                DAYNAME(fecha_venta) AS dia_semana,
-                SUM(total) AS total_ventas
-            FROM ventas_repartidores
-            GROUP BY dia, dia_semana
-            ORDER BY dia DESC
+                DATE(vr.fecha_venta) AS dia, 
+                DAYNAME(vr.fecha_venta) AS dia_semana,
+                p.nombre AS producto,
+                SUM(vd.cantidad) AS cantidad_vendida,
+                SUM(vd.subtotal) AS total_por_producto
+            FROM ventas_repartidores vr
+            JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
+            JOIN productos p ON vd.producto_id = p.id_producto
+            GROUP BY dia, dia_semana, p.nombre
+            ORDER BY dia DESC, p.nombre;
         `);
 
-        const resultTraducido = result.map(row => ({
-            dia: row.dia,
-            dia_semana: traducirDiaSemana(row.dia_semana),
-            total_ventas: row.total_ventas
-        }));
+        const datosAgrupados = result.reduce((acc, row) => {
+            const diaKey = row.dia;
+            if (!acc[diaKey]) {
+                acc[diaKey] = {
+                    dia: row.dia,
+                    dia_semana: traducirDiaSemana(row.dia_semana),
+                    productos: []
+                };
+            }
 
-        res.json(resultTraducido);
+            acc[diaKey].productos.push({
+                producto: row.producto,
+                cantidad_vendida: row.cantidad_vendida,
+                total_por_producto: row.total_por_producto
+            });
+
+            return acc;
+        }, {});
+
+        const resultadoFinal = Object.values(datosAgrupados);
+
+        res.json(resultadoFinal);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Error al obtener las ventas por día.' });
