@@ -5,7 +5,6 @@ const getVentasPorMes = async (req, res) => {
     try {
         const [result] = await pool.query(`
             SELECT 
-                EXTRACT(YEAR FROM vr.fecha_venta) AS año,
                 MONTHNAME(vr.fecha_venta) AS mes,
                 MONTH(vr.fecha_venta) AS mes_numero,
                 p.nombre AS producto,
@@ -15,46 +14,26 @@ const getVentasPorMes = async (req, res) => {
             FROM ventas_repartidores vr
             JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
             JOIN productos p ON vd.producto_id = p.id_producto
-            GROUP BY año, mes, mes_numero, p.nombre
-            ORDER BY año, mes_numero, p.nombre;
+            GROUP BY mes, mes_numero, p.nombre
+            ORDER BY mes_numero, p.nombre;
         `);
 
         // Mapeamos los resultados para incluir todos los datos necesarios
         const resultTraducido = result.map(row => ({
-            año: row.año,
             mes: row.mes,
             mes_numero: row.mes_numero,
             producto: row.producto,
             total_unidades: Number(row.total_unidades),  // Convierte a número
             total_por_producto: Number(row.total_por_producto),  // Convierte a número
             total_ventas: Number(row.total_ventas),  // Convierte a número
-          }));
-          
-
+        }));
+        
         // Enviamos la respuesta con todos los datos
         res.json(resultTraducido);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Error al obtener las ventas por mes.' });
     }
-};
-
-const traducirMes = (mesIngles) => {
-    const meses = {
-        "January": "Enero",
-        "February": "Febrero",
-        "March": "Marzo",
-        "April": "Abril",
-        "May": "Mayo",
-        "June": "Junio",
-        "July": "Julio",
-        "August": "Agosto",
-        "September": "Septiembre",
-        "October": "Octubre",
-        "November": "Noviembre",
-        "December": "Diciembre"
-    };
-    return meses[mesIngles] || mesIngles;
 };
 
 const getVentasPorSemana = async (req, res) => {
