@@ -4,14 +4,20 @@ const { pool } = require('../../config/db'); // Importa el pool de conexiones
 const getVentasPorMes = async (req, res) => {
     try {
         const [result] = await pool.query(`
-            SELECT 
-                EXTRACT(YEAR FROM fecha_venta) AS año, 
-                MONTHNAME(fecha_venta) AS mes, 
-                MONTH(fecha_venta) AS mes_numero,  -- Incluimos el número del mes para ordenar
-                SUM(total) AS total_ventas
-            FROM ventas_repartidores
-            GROUP BY año, mes, mes_numero
-            ORDER BY año, mes_numero
+                SELECT 
+            EXTRACT(YEAR FROM vr.fecha_venta) AS año,
+            MONTHNAME(vr.fecha_venta) AS mes,
+            MONTH(vr.fecha_venta) AS mes_numero,
+            p.nombre AS producto,
+            SUM(vr.total) AS total_ventas,
+            SUM(vd.cantidad) AS total_unidades,
+            SUM(vd.subtotal) AS total_por_producto
+        FROM ventas_repartidores vr
+        JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
+        JOIN productos p ON vd.producto_id = p.id_producto
+        GROUP BY año, mes, mes_numero, p.nombre
+        ORDER BY año, mes_numero, p.nombre;
+
         `);
 
         const resultTraducido = result.map(row => ({
@@ -49,13 +55,21 @@ const traducirMes = (mesIngles) => {
 const getVentasPorSemana = async (req, res) => {
     try {
         const [result] = await pool.query(`
-            SELECT 
-                MONTHNAME(fecha_venta) AS mes, 
-                EXTRACT(WEEK FROM fecha_venta) AS semana_del_mes,
-                SUM(total) AS total_ventas
-            FROM ventas_repartidores
-            GROUP BY mes, semana_del_mes
-            ORDER BY FIELD(mes, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'), semana_del_mes
+                SELECT 
+            MONTHNAME(vr.fecha_venta) AS mes,
+            EXTRACT(WEEK FROM vr.fecha_venta) AS semana_del_mes,
+            p.nombre AS producto,
+            SUM(vd.cantidad) AS cantidad_vendida,
+            SUM(vd.subtotal) AS total_por_producto
+        FROM ventas_repartidores vr
+        JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
+        JOIN productos p ON vd.producto_id = p.id_producto
+        GROUP BY mes, semana_del_mes, p.nombre
+        ORDER BY 
+            FIELD(mes, 'January', 'February', 'March', 'April', 'May', 'June', 
+                        'July', 'August', 'September', 'October', 'November', 'December'), 
+            semana_del_mes,
+            p.nombre;
         `);
 
         const resultFormateado = result.reduce((acc, row) => {
@@ -85,10 +99,17 @@ const getVentasPorSemana = async (req, res) => {
 const getVentasPorAnio = async (req, res) => {
     try {
         const [result] = await pool.query(`
-            SELECT EXTRACT(YEAR FROM fecha_venta) AS año, SUM(total) AS total_ventas
-            FROM ventas_repartidores
-            GROUP BY año
-            ORDER BY año
+                    SELECT 
+                EXTRACT(YEAR FROM vr.fecha_venta) AS año,
+                p.nombre AS producto,
+                SUM(vd.cantidad) AS cantidad_total,
+                SUM(vd.subtotal) AS total_por_producto
+            FROM ventas_repartidores vr
+            JOIN ventas_detalles vd ON vr.id_venta = vd.venta_id
+            JOIN productos p ON vd.producto_id = p.id_producto
+            GROUP BY año, p.nombre
+            ORDER BY año, p.nombre;
+
         `);
 
         res.json(result);
