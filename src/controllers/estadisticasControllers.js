@@ -22,13 +22,14 @@ const getVentasPorMes = async (req, res) => {
         // Mapeamos los resultados para incluir todos los datos necesarios
         const resultTraducido = result.map(row => ({
             año: row.año,
-            mes: traducirMes(row.mes), // Traducir el nombre del mes
+            mes: row.mes,
             mes_numero: row.mes_numero,
             producto: row.producto,
-            total_unidades: row.total_unidades,
-            total_por_producto: row.total_por_producto,
-            total_ventas: row.total_ventas
-        }));
+            total_unidades: Number(row.total_unidades),  // Convierte a número
+            total_por_producto: Number(row.total_por_producto),  // Convierte a número
+            total_ventas: Number(row.total_ventas),  // Convierte a número
+          }));
+          
 
         // Enviamos la respuesta con todos los datos
         res.json(resultTraducido);
