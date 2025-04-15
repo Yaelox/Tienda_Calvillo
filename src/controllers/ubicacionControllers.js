@@ -129,20 +129,22 @@ const getUbicaciones = async (req, res) => {
   
       // Ahora, obtenemos las ubicaciones con el motivo correspondiente
       const [rows] = await pool.query(`
-        SELECT 
-          u.id, 
-          u.nombre_tienda, 
-          u.latitud, 
-          u.longitud, 
-          u.fecha_registro, 
-          COALESCE(vr.motivo, u.motivo) AS motivo_final
-        FROM ubicaciones u
-        LEFT JOIN ventas_repartidores vr 
-          ON vr.id_ubicacion = u.id
-          AND vr.fecha_venta = (
-            SELECT MAX(fecha_venta)
-            FROM ventas_repartidores
-            WHERE id_ubicacion = u.id
+      SELECT 
+    u.id, 
+    u.nombre_tienda, 
+    u.latitud, 
+    u.longitud, 
+    u.fecha_registro, 
+    COALESCE(vr.motivo, u.motivo) AS motivo_final
+FROM ubicaciones u
+LEFT JOIN ventas_repartidores vr 
+    ON vr.id_ubicacion = u.id
+    AND vr.fecha_venta = (
+        SELECT MAX(fecha_venta)
+        FROM ventas_repartidores
+        WHERE id_ubicacion = u.id
+    );
+
           );
       `);
   
