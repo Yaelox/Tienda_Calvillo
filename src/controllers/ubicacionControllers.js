@@ -34,7 +34,6 @@ const PostUbicacion= async (req, res) => {
       res.status(500).json({ message: 'Error al eliminar la ubicación' });
     }
   };
-
   const updatecolor = async (req, res) => {
     const { id } = req.params;
     const { motivo } = req.body; // Motivo nuevo que recibimos desde el cuerpo de la solicitud
@@ -47,26 +46,42 @@ const PostUbicacion= async (req, res) => {
     }
   
     try {
+      // Comenzamos una transacción
+      await pool.query('START TRANSACTION');
+  
       // Consulta SQL para actualizar el motivo en la tabla `ubicaciones`
-      const [result] = await pool.query(
+      const [resultUbicacion] = await pool.query(
         'UPDATE ubicaciones SET motivo = ? WHERE id = ?',
         [motivo, id]
       );
   
-      if (result.affectedRows === 0) {
+      if (resultUbicacion.affectedRows === 0) {
+        await pool.query('ROLLBACK');  // Si no se actualizó, revertir la transacción
         return res.status(404).json({ error: 'Ubicación no encontrada' });
       }
   
-      // Asegurarse de que el cambio se refleje correctamente al responder
-      res.json({ message: 'Motivo actualizado con éxito' });
+      // Consulta SQL para actualizar el motivo en la tabla `ventas_repartidores`
+      const [resultVentas] = await pool.query(
+        'UPDATE ventas_repartidores SET motivo = ? WHERE id_ubicacion = ?',
+        [motivo, id]
+      );
+  
+      if (resultVentas.affectedRows === 0) {
+        await pool.query('ROLLBACK');  // Si no se actualizó en ventas_repartidores, revertir la transacción
+        return res.status(404).json({ error: 'Ventas de la ubicación no encontradas o no se pudieron actualizar' });
+      }
+  
+      // Si ambas actualizaciones fueron exitosas, confirmamos la transacción
+      await pool.query('COMMIT');
+      res.json({ message: 'Motivo actualizado con éxito en ambas tablas' });
+  
     } catch (err) {
+      await pool.query('ROLLBACK');  // En caso de error, revertir la transacción
       console.error('Error al actualizar motivo:', err);
       res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
-
-
-
+  };
+  
   const updateUbicacion = async (req, res) => {
     const { id } = req.params;
     const { nombre_tienda, latitud, longitud } = req.body;

@@ -1,7 +1,7 @@
 const { pool } = require("../../config/db"); // Asegúrate de usar la ruta correcta
 
 const registrarVenta = async (req, res) => {
-    const { repartidor_id, total,motivo,id_ubicacion, productos, foto_venta } = req.body; // Se espera un array de productos
+    const { repartidor_id, total, motivo, id_ubicacion, productos, foto_venta } = req.body; // Se espera un array de productos
 
     // Verificar que todos los campos necesarios están presentes
     if (!repartidor_id || !total || !foto_venta || !motivo || !id_ubicacion || !productos || productos.length === 0) {
@@ -15,8 +15,8 @@ const registrarVenta = async (req, res) => {
         await connection.beginTransaction();
 
         // Registrar la venta en la tabla ventas_repartidores
-        const queryVenta = "INSERT INTO ventas_repartidores (repartidor_id, total, motivo,foto_venta, id_ubicacion) VALUES (?, ?, ?,?,?)";
-        const [ventaResult] = await connection.query(queryVenta, [repartidor_id, total,motivo,foto_venta,id_ubicacion,]);
+        const queryVenta = "INSERT INTO ventas_repartidores (repartidor_id, total, motivo, foto_venta, id_ubicacion) VALUES (?, ?, ?, ?, ?)";
+        const [ventaResult] = await connection.query(queryVenta, [repartidor_id, total, motivo, foto_venta, id_ubicacion]);
 
         // Obtener el id de la venta registrada
         const ventaId = ventaResult.insertId;
@@ -33,7 +33,7 @@ const registrarVenta = async (req, res) => {
             }
 
             // Verificar si hay suficiente stock disponible
-            const queryStock = "SELECT stock FROM productos WHERE  id_producto  = ?";
+            const queryStock = "SELECT stock FROM productos WHERE id_producto = ?";
             const [stockResult] = await connection.query(queryStock, [producto_id]);
 
             if (stockResult.length === 0 || stockResult[0].stock < cantidad) {
@@ -42,7 +42,7 @@ const registrarVenta = async (req, res) => {
 
             // Restar el stock
             const nuevoStock = stockResult[0].stock - cantidad;
-            const queryActualizarStock = "UPDATE productos SET stock = ? WHERE  id_producto  = ?";
+            const queryActualizarStock = "UPDATE productos SET stock = ? WHERE id_producto = ?";
             await connection.query(queryActualizarStock, [nuevoStock, producto_id]);
 
             // Calcular el subtotal
@@ -53,11 +53,15 @@ const registrarVenta = async (req, res) => {
             await connection.query(queryDetalle, [ventaId, producto_id, cantidad, precio, subtotal]);
         }
 
+        // Actualizar el motivo en la tabla ubicaciones (en el registro correspondiente)
+        const queryActualizarMotivoUbicacion = "UPDATE ubicaciones SET motivo = ? WHERE id = ?";
+        await connection.query(queryActualizarMotivoUbicacion, [motivo, id_ubicacion]);
+
         // Confirmar la transacción
         await connection.commit();
 
         // Responder con éxito
-        res.json({ success: true, message: "Venta registrada con éxito" });
+        res.json({ success: true, message: "Venta registrada con éxito y motivo actualizado en ambas tablas" });
     } catch (error) {
         // Si hay un error, revertir la transacción
         await connection.rollback();
