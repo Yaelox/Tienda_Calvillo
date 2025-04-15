@@ -140,7 +140,11 @@ const getUbicaciones = async (req, res) => {
                 u.latitud, 
                 u.longitud, 
                 u.fecha_registro, 
-                COALESCE(vr.motivo, u.motivo) AS motivo_final
+                -- Verificar si los motivos son iguales entre ambas tablas y devolver el motivo final
+                CASE 
+                    WHEN u.motivo = vr.motivo THEN u.motivo
+                    ELSE CONCAT(u.motivo, ' / ', vr.motivo) 
+                END AS motivo_final
             FROM ubicaciones u
             LEFT JOIN ventas_repartidores vr 
                 ON vr.id_ubicacion = u.id
