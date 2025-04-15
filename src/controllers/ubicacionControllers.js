@@ -101,59 +101,63 @@ const getUbicaciones = async (req, res) => {
   const getMotivosUbicacion = async (req, res) => {
     const { id, motivo } = req.params; // Obtener el ID y el motivo de los parámetros de la solicitud
     
+    console.log('ID recibido:', id);  // Verifica que el ID recibido sea correcto
+    console.log('Motivo recibido:', motivo);  // Verifica que el motivo recibido sea correcto
+
     try {
-      // Si se recibe un motivo en la solicitud, actualizamos la ubicación y las ventas
-      if (motivo) {
-        // Verificar si el motivo es válido
-        const motivosValidos = ['Motivo_Azul', 'Motivo_Rojo', 'Motivo_Naranja', 'Motivo_Verde'];
-        if (!motivosValidos.includes(motivo)) {
-          return res.status(400).json({ error: 'Motivo inválido' });
+        // Si se recibe un motivo en la solicitud, actualizamos la ubicación y las ventas
+        if (motivo) {
+            // Verificar si el motivo es válido
+            const motivosValidos = ['Motivo_Azul', 'Motivo_Rojo', 'Motivo_Naranja', 'Motivo_Verde'];
+            if (!motivosValidos.includes(motivo)) {
+                return res.status(400).json({ error: 'Motivo inválido' });
+            }
+
+            // Realizar la actualización de los motivos en la tabla 'ubicaciones' y 'ventas_repartidores'
+            const [updateResult] = await pool.query(`
+                UPDATE ubicaciones u
+                JOIN ventas_repartidores vr ON u.id = vr.id_ubicacion
+                SET 
+                    u.motivo = ?,
+                    vr.motivo = ?
+                WHERE u.id = ?;
+            `, [motivo, motivo, id]);
+
+            console.log('Resultado de la actualización:', updateResult);  // Verifica el resultado del UPDATE
+
+            if (updateResult.affectedRows === 0) {
+                return res.status(404).json({ error: 'Ubicación no encontrada o no se pudo actualizar' });
+            }
+
+            res.json({ message: 'Motivo actualizado con éxito' });
         }
-  
-        // Realizar la actualización de los motivos en la tabla 'ubicaciones' y 'ventas_repartidores'
-        const [updateResult] = await pool.query(`
-          UPDATE ubicaciones u
-          JOIN ventas_repartidores vr ON u.id = vr.id_ubicacion
-          SET 
-            u.motivo = ?,
-            vr.motivo = ?
-          WHERE u.id = ?;
-        `, [motivo, motivo, id]);
-  
-        if (updateResult.affectedRows === 0) {
-          return res.status(404).json({ error: 'Ubicación no encontrada o no se pudo actualizar' });
-        }
-  
-        res.json({ message: 'Motivo actualizado con éxito' });
-      }
-      
-      // Obtener las ubicaciones con el motivo correspondiente
-      const [rows] = await pool.query(`
-        SELECT 
-          u.id, 
-          u.nombre_tienda, 
-          u.latitud, 
-          u.longitud, 
-          u.fecha_registro, 
-          COALESCE(vr.motivo, u.motivo) AS motivo_final
-        FROM ubicaciones u
-        LEFT JOIN ventas_repartidores vr 
-          ON vr.id_ubicacion = u.id
-          AND vr.fecha_venta = (
-            SELECT MAX(fecha_venta)
-            FROM ventas_repartidores
-            WHERE id_ubicacion = u.id
-          );
-      `);
-  
-      res.json(rows);
+
+        // Obtener las ubicaciones con el motivo correspondiente
+        const [rows] = await pool.query(`
+            SELECT 
+                u.id, 
+                u.nombre_tienda, 
+                u.latitud, 
+                u.longitud, 
+                u.fecha_registro, 
+                COALESCE(vr.motivo, u.motivo) AS motivo_final
+            FROM ubicaciones u
+            LEFT JOIN ventas_repartidores vr 
+                ON vr.id_ubicacion = u.id
+                AND vr.fecha_venta = (
+                    SELECT MAX(fecha_venta)
+                    FROM ventas_repartidores
+                    WHERE id_ubicacion = u.id
+                );
+        `);
+
+        res.json(rows);
     } catch (error) {
-      console.error('Error al obtener o actualizar ubicaciones:', error);
-      res.status(500).json({ error: 'Error interno del servidor' });
+        console.error('Error al obtener o actualizar ubicaciones:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
-  };
-  
-  
+};
+
   
   module.exports = {
     getUbicaciones,
