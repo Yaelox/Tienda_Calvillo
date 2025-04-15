@@ -99,18 +99,18 @@ const getUbicaciones = async (req, res) => {
   };
 
   const getMotivosUbicacion = async (req, res) => {
-    const { id, motivo } = req.params; // Obtener el ID y el motivo del cuerpo de la solicitud si vienen en el parámetro
-  
+    const { id, motivo } = req.params; // Obtener el ID y el motivo de los parámetros de la solicitud
+    
     try {
-      // Si se recibe un motivo en el cuerpo de la solicitud, actualizar la ubicación y las ventas
+      // Si se recibe un motivo en la solicitud, actualizamos la ubicación y las ventas
       if (motivo) {
-        // Verifica si el motivo es válido
+        // Verificar si el motivo es válido
         const motivosValidos = ['Motivo_Azul', 'Motivo_Rojo', 'Motivo_Naranja', 'Motivo_Verde'];
         if (!motivosValidos.includes(motivo)) {
           return res.status(400).json({ error: 'Motivo inválido' });
         }
   
-        // Realiza la actualización de los motivos tanto en la tabla 'ubicaciones' como 'ventas_repartidores'
+        // Realizar la actualización de los motivos en la tabla 'ubicaciones' y 'ventas_repartidores'
         const [updateResult] = await pool.query(`
           UPDATE ubicaciones u
           JOIN ventas_repartidores vr ON u.id = vr.id_ubicacion
@@ -123,28 +123,26 @@ const getUbicaciones = async (req, res) => {
         if (updateResult.affectedRows === 0) {
           return res.status(404).json({ error: 'Ubicación no encontrada o no se pudo actualizar' });
         }
-        
+  
         res.json({ message: 'Motivo actualizado con éxito' });
       }
-  
-      // Ahora, obtenemos las ubicaciones con el motivo correspondiente
+      
+      // Obtener las ubicaciones con el motivo correspondiente
       const [rows] = await pool.query(`
-      SELECT 
-    u.id, 
-    u.nombre_tienda, 
-    u.latitud, 
-    u.longitud, 
-    u.fecha_registro, 
-    COALESCE(vr.motivo, u.motivo) AS motivo_final
-FROM ubicaciones u
-LEFT JOIN ventas_repartidores vr 
-    ON vr.id_ubicacion = u.id
-    AND vr.fecha_venta = (
-        SELECT MAX(fecha_venta)
-        FROM ventas_repartidores
-        WHERE id_ubicacion = u.id
-    );
-
+        SELECT 
+          u.id, 
+          u.nombre_tienda, 
+          u.latitud, 
+          u.longitud, 
+          u.fecha_registro, 
+          COALESCE(vr.motivo, u.motivo) AS motivo_final
+        FROM ubicaciones u
+        LEFT JOIN ventas_repartidores vr 
+          ON vr.id_ubicacion = u.id
+          AND vr.fecha_venta = (
+            SELECT MAX(fecha_venta)
+            FROM ventas_repartidores
+            WHERE id_ubicacion = u.id
           );
       `);
   
@@ -153,7 +151,8 @@ LEFT JOIN ventas_repartidores vr
       console.error('Error al obtener o actualizar ubicaciones:', error);
       res.status(500).json({ error: 'Error interno del servidor' });
     }
-  }
+  };
+  
   
   
   module.exports = {
