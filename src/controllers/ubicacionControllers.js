@@ -35,6 +35,36 @@ const PostUbicacion= async (req, res) => {
     }
   };
 
+  const updatecolor = async (req, res) => {
+    const { id } = req.params;
+    const { motivo } = req.body; // Motivo nuevo que recibimos desde el cuerpo de la solicitud
+  
+    // Validamos que el motivo esté dentro de las opciones permitidas
+    const motivosValidos = ['Motivo_Azul', 'Motivo_Rojo', 'Motivo_Naranja', 'Motivo_Verde'];
+  
+    if (!motivosValidos.includes(motivo)) {
+      return res.status(400).json({ error: 'Motivo inválido' });
+    }
+  
+    try {
+      // Consulta SQL para actualizar el motivo
+      const [result] = await pool.query(
+        'UPDATE ubicaciones SET motivo = ? WHERE id = ?',
+        [motivo, id]
+      );
+  
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Ubicación no encontrada' });
+      }
+  
+      res.json({ message: 'Motivo actualizado con éxito' });
+    } catch (err) {
+      console.error('Error al actualizar motivo:', err);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+
+
   const updateUbicacion = async (req, res) => {
     const { id } = req.params;
     const { nombre_tienda, latitud, longitud } = req.body;
@@ -98,7 +128,8 @@ const getMotivosUbicacion = async (req, res) => {
     PostUbicacion,
     deleteUbicacion,
     updateUbicacion,
-    getMotivosUbicacion
+    getMotivosUbicacion,
+    updatecolor
 
   };
   
