@@ -1,10 +1,10 @@
 const { pool } = require("../../config/db"); // Asegúrate de usar la ruta correcta
 
 const registrarVenta = async (req, res) => {
-    const { repartidor_id, total, motivo, id_ubicacion, productos, foto_venta } = req.body; // Se espera un array de productos
+    const { repartidor_id, total, motivo, id_ubicacion, productos,  } = req.body; // Se espera un array de productos
 
     // Verificar que todos los campos necesarios están presentes
-    if (!repartidor_id || !total || !foto_venta || !motivo || !id_ubicacion || !productos || productos.length === 0) {
+    if (!repartidor_id || !total || !motivo || !id_ubicacion || !productos || productos.length === 0) {
         return res.status(400).json({ error: "Todos los campos son obligatorios, incluyendo los productos" });
     }
 
@@ -15,8 +15,8 @@ const registrarVenta = async (req, res) => {
         await connection.beginTransaction();
 
         // Registrar la venta en la tabla ventas_repartidores
-        const queryVenta = "INSERT INTO ventas_repartidores (repartidor_id, total, motivo, foto_venta, id_ubicacion) VALUES (?, ?, ?, ?, ?)";
-        const [ventaResult] = await connection.query(queryVenta, [repartidor_id, total, motivo, foto_venta, id_ubicacion]);
+        const queryVenta = "INSERT INTO ventas_repartidores (repartidor_id, total, motivo, id_ubicacion) VALUES (?, ?, ?, ?)";
+        const [ventaResult] = await connection.query(queryVenta, [repartidor_id, total, motivo, id_ubicacion]);
 
         // Obtener el id de la venta registrada
         const ventaId = ventaResult.insertId;
@@ -111,7 +111,6 @@ const obtenerVentasPorRepartidor = async (req, res) => {
                     tienda_id: venta.tienda_id,
                     total: venta.total,
                     fecha_venta: venta.fecha_venta,
-                    foto_venta: venta.foto_venta,
                     detalles: [] // Inicializamos la lista de detalles
                 };
                 ventasConDetalles.push(ventaExistente);
